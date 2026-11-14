@@ -18,7 +18,7 @@ class Outcome(Enum):
     REJECTED = "REJECTED"
     """No hay regla aplicable y el estado no pertenece a F."""
     LIMIT_EXCEEDED = "LIMIT_EXCEEDED"
-    """Se agotó ``max_steps``; es una salvaguarda operativa, no un rechazo."""
+    """Se aplicaron ``max_steps`` transiciones y aún había una regla aplicable; no es un rechazo."""
 
 
 @dataclass(frozen=True)

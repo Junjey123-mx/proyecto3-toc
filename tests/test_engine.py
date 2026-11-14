@@ -159,6 +159,17 @@ def test_one_step_short_of_final_is_limit_exceeded():
     assert (result.outcome, result.steps, result.final.state) == (Outcome.LIMIT_EXCEEDED, 2, "t")
 
 
+def test_halting_without_rule_exactly_at_the_limit_is_a_rejection():
+    machine = tiny(Transition("s", BLANK, "a", "t", BLANK, "a", Move.R))
+    result = simulate(machine, "a", max_steps=1)
+    assert (result.outcome, result.steps, result.final.state) == (Outcome.REJECTED, 1, "t")
+
+
+def test_limit_reason_says_the_machine_could_continue():
+    loop = tiny(Transition("s", BLANK, "a", "s", BLANK, "a", Move.S))
+    assert simulate(loop, "a", max_steps=3).reason == "se aplicaron 3 transiciones y la máquina aún no se detiene"
+
+
 def test_cache_is_carried_between_steps():
     result = simulate(three_steps_to_final(), "a")
     assert [c.cache for c in result.configurations] == [BLANK, BLANK, "a", "a"]

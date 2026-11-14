@@ -19,10 +19,12 @@ def simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STE
     Antes de cada transición se comprueba, en este orden:
 
     1. estado ∈ F → ``ACCEPTED`` (los estados finales son terminales);
-    2. ya se aplicaron ``max_steps`` transiciones → ``LIMIT_EXCEEDED``;
-    3. no hay regla aplicable → ``REJECTED``.
+    2. no hay regla aplicable → ``REJECTED``;
+    3. ya se aplicaron ``max_steps`` transiciones → ``LIMIT_EXCEEDED``.
 
-    Así, alcanzar F exactamente en la transición ``max_steps`` acepta. Cada
+    Así, ``LIMIT_EXCEEDED`` solo ocurre si la máquina aún podía continuar: una
+    MT que se detiene (en F o sin regla) justo tras ``max_steps`` transiciones
+    se acepta o se rechaza normalmente. Cada
     llamada parte de una configuración nueva, por lo que las simulaciones no
     comparten estado. Lanza ``ValueError`` si ``max_steps`` < 1 o si ``word`` usa
     símbolos fuera de Σ.
@@ -36,9 +38,6 @@ def simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STE
     current = Configuration(0, machine.initial_state, BLANK, 0, Tape.from_input(word).snapshot())
     history = [current]
     while current.state not in machine.final_states:
-        if current.step_index >= max_steps:
-            reason = f"se alcanzó el límite de {max_steps} transiciones sin detenerse"
-            return SimulationResult(word, Outcome.LIMIT_EXCEEDED, history, reason)
         following = step(machine, current)
         if following is None:
             reason = (
@@ -46,6 +45,9 @@ def simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STE
                 f"leyendo {_show(current.scanned)}, y {current.state!r} no es final"
             )
             return SimulationResult(word, Outcome.REJECTED, history, reason)
+        if current.step_index >= max_steps:
+            reason = f"se aplicaron {max_steps} transiciones y la máquina aún no se detiene"
+            return SimulationResult(word, Outcome.LIMIT_EXCEEDED, history, reason)
         history.append(following)
         current = following
     return SimulationResult(word, Outcome.ACCEPTED, history, f"alcanzó el estado final {current.state!r}")

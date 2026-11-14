@@ -51,9 +51,9 @@ simulate(M, w, max_steps):
     ID ← (paso 0, q0, caché B, cabezal 0, cinta w)
     historial ← [ID]
     mientras estado(ID) ∉ F:
-        si paso(ID) ≥ max_steps: devolver LIMIT_EXCEEDED
         siguiente ← step(M, ID)
         si siguiente = nada: devolver REJECTED
+        si paso(ID) ≥ max_steps: devolver LIMIT_EXCEEDED
         historial.agregar(siguiente); ID ← siguiente
     devolver ACCEPTED
 ```
@@ -61,11 +61,12 @@ simulate(M, w, max_steps):
 | Condición, en orden | Resultado | Fundamento |
 |---|---|---|
 | El estado actual ∈ F | `ACCEPTED` | L(M) = {w ∈ Σ* \| q0w ⊢* αpβ, p ∈ F} (deck); D6 |
-| Se aplicaron `max_steps` transiciones | `LIMIT_EXCEEDED` | Salvaguarda operativa; la parada no es decidible (kenjinote, 2026) |
 | No hay regla para (estado, caché, lectura) | `REJECTED` | Enunciado: «terminar la ejecución sin poder aplicar una función de transición» |
+| Hay regla, pero ya se aplicaron `max_steps` transiciones | `LIMIT_EXCEEDED` | Salvaguarda operativa; la parada no es decidible (kenjinote, 2026) |
 
-- La aceptación se comprueba primero: si F se alcanza exactamente en la
-  transición `max_steps`, la cadena se acepta.
+- La cota solo se aplica si la máquina aún puede continuar: una MT que se
+  detiene (en F o sin regla) justo tras `max_steps` transiciones se acepta o se
+  rechaza normalmente.
 - `max_steps` vale `DEFAULT_MAX_STEPS = 10_000` salvo que se indique otro entero positivo.
 - `LIMIT_EXCEEDED` no es un rechazo: significa que la simulación no terminó dentro de la cota.
 - Un archivo o una máquina inválidos son `InputError` y nunca llegan al motor;
