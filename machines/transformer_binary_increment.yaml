@@ -1,0 +1,87 @@
+---
+# Máquina alteradora: incremento binario, f(w) = bin(value2(w) + 1).
+# Diseño formal, tabla de transiciones y recorridos en docs/test_cases.md (sección 2).
+# Recorre el número hasta el final, carga el acarreo en la caché y lo propaga de derecha
+# a izquierda; se detiene al reemplazar el primer 0 o, si todos los bits son 1, agrega
+# un 1 a la izquierda (posición -1), sin perder el acarreo: 11111 -> 100000.
+# Caché: '1' = acarreo pendiente; vacía (blanco) = sin acarreo.
+q_states:
+  q_list:
+  - q0
+  - q1
+  - q2
+  initial: q0
+  final: q2
+alphabet:
+- '0'
+- '1'
+tape_alphabet:
+- '0'
+- '1'
+-
+delta:
+# q0: barrido a la derecha sin modificar los bits.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+# Fin del número: carga el acarreo inicial (+1) en la caché y regresa al último bit.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q1
+    mem_cache_value: '1'
+    tape_output:
+    tape_displacement: L
+# q1 con acarreo: 1 + 1 = 10, escribe 0 y el acarreo continúa a la izquierda.
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value: '1'
+    tape_output: '0'
+    tape_displacement: L
+# 0 + 1 = 1: escribe 1, vacía la caché y se detiene en el estado final.
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: S
+# Desbordamiento: no quedan bits; el acarreo se escribe como nuevo bit más significativo.
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input:
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: S
+simulation_strings:
+# Demostración: cuatro transformaciones de longitud 5, incluido el desbordamiento.
+- '10101'
+- '11011'
+- '11111'
+- '10000'
