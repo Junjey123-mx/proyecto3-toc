@@ -1,0 +1,125 @@
+---
+# Máquina reconocedora: L = {a^n b^n | n >= 1}.
+# Diseño formal, tabla de transiciones y corrección en docs/test_cases.md (sección 1).
+# Cada ronda marca la a más a la izquierda con X y la primera b sin emparejar con Y;
+# cuando ya no quedan a, comprueba que solo haya Y hasta el primer blanco.
+# La caché no se utiliza: vale blanco en todas las reglas.
+q_states:
+  q_list:
+  - q0
+  - q1
+  - q2
+  - q3
+  - q4
+  initial: q0
+  final: q4
+alphabet:
+- a
+- b
+tape_alphabet:
+- a
+- b
+- X
+- Y
+-
+delta:
+# q0: marca la a más a la izquierda; si encuentra Y, ya no quedan a y pasa a q3.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: a
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: X
+    tape_displacement: R
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: Y
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: Y
+    tape_displacement: R
+# q1: busca a la derecha la primera b sin emparejar, cruzando a y Y, y la marca.
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: a
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: a
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: Y
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: Y
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: b
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: Y
+    tape_displacement: L
+# q2: regresa a la izquierda hasta la última X y empieza otra ronda.
+- params:
+    initial_state: q2
+    mem_cache_value:
+    tape_input: a
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: a
+    tape_displacement: L
+- params:
+    initial_state: q2
+    mem_cache_value:
+    tape_input: Y
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: Y
+    tape_displacement: L
+- params:
+    initial_state: q2
+    mem_cache_value:
+    tape_input: X
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: X
+    tape_displacement: R
+# q3: solo deben quedar Y hasta el primer blanco; entonces acepta en q4.
+- params:
+    initial_state: q3
+    mem_cache_value:
+    tape_input: Y
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: Y
+    tape_displacement: R
+- params:
+    initial_state: q3
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output:
+    tape_displacement: R
+simulation_strings:
+# Demostración: dos cadenas aceptadas y dos rechazadas, todas de longitud >= 5.
+- aaabbb
+- aaaabbbb
+- aaabb
+- aabbbb
