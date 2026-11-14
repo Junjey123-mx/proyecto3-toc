@@ -41,10 +41,20 @@ def test_unreadable_file(tmp_path):
     path = write(tmp_path, "alphabet: [a]\n")
     path.chmod(0)
     try:
+        if _still_readable(path):  # Windows: chmod solo alterna el atributo de solo lectura
+            pytest.skip("el sistema no permite revocar la lectura con chmod")
         with pytest.raises(YamlLoadError, match="no se puede leer"):
             load_yaml(path)
     finally:
         path.chmod(0o600)
+
+
+def _still_readable(path):
+    try:
+        path.read_bytes()
+    except OSError:
+        return False
+    return True
 
 
 def test_non_utf8_file(tmp_path):
