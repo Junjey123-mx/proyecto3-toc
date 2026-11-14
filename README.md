@@ -97,7 +97,41 @@ El desarrollo se organizará en 26 commits, distribuidos secuencialmente entre l
 
 ## 14. Ejecución
 
-*Pendiente de implementación.*
+Requisitos: Python 3.10 o superior.
+
+```bash
+python -m pip install -r requirements.txt
+python main.py --machine machines/examples/basic_machine.yaml
+python main.py --machine machines/examples/basic_machine.yaml --max-steps 500
+python main.py --help
+```
+
+| Argumento | Obligatorio | Descripción |
+|---|---|---|
+| `--machine ARCHIVO` | Sí | Archivo YAML con la máquina y su lista `simulation_strings` |
+| `--max-steps N` | No | Máximo de transiciones por cadena (entero positivo; por defecto 10000) |
+
+El programa simula en orden cada cadena de `simulation_strings` y escribe en la
+salida estándar:
+
+1. La descripción formal de la máquina (Q, Σ, Γ, q0, F, blanco y número de reglas).
+2. Por cada cadena: resultado (`ACCEPTED`, `REJECTED` o `LIMIT_EXCEEDED`), motivo,
+   pasos, estado, caché y cabezal finales, contenido final de la cinta, ID final,
+   vista de la cinta con la posición del cabezal y la tabla completa de
+   descripciones instantáneas (ID_0 a ID_n) con la regla aplicada en cada paso.
+3. Un resumen con una fila por cadena.
+
+`LIMIT_EXCEEDED` significa que la máquina todavía tenía una regla aplicable al
+agotar `--max-steps`; no es un rechazo.
+
+| Código de salida | Significado |
+|---|---|
+| 0 | Todas las cadenas se simularon |
+| 1 | El archivo no se pudo leer o la máquina no es válida (detalle en la salida de errores) |
+| 2 | Argumentos incorrectos |
+
+`machines/examples/basic_machine.yaml` es la máquina del Laboratorio 10 que se
+usa como referencia de las pruebas.
 
 ## 15. Casos de demostración
 
