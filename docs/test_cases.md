@@ -346,3 +346,89 @@ Resultados observados con
 | `11011` | ACCEPTED | 9 | `11100` | `11[q2,B]100` |
 | `11111` | ACCEPTED | 12 | `100000` | `[q2,B]100000` |
 | `10000` | ACCEPTED | 7 | `10001` | `1000[q2,B]1` |
+
+## 3. Demostraciones
+
+### 3.1 Comandos
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest -q
+python main.py --machine machines/recognizer_anbn.yaml
+python main.py --machine machines/transformer_binary_increment.yaml
+```
+
+Cada archivo YAML incluye en `simulation_strings` exactamente las cuatro cadenas
+de su demostración, todas de longitud ≥ 5, y la CLI las simula en ese orden.
+
+### 3.2 Resultados observados
+
+Salida real de los dos comandos anteriores (Windows 11, Python 3.14.3, 14/11/2026).
+Coincide con los valores esperados de §1.7 y §2.9.
+
+| Máquina | Cadena | Longitud | Resultado | Pasos | Cinta final | ID final |
+|---|---|---|---|---|---|---|
+| Reconocedora | `aaabbb` | 6 | ACCEPTED | 25 | `XXXYYY` | `XXXYYYB[q4,B]B` |
+| Reconocedora | `aaaabbbb` | 8 | ACCEPTED | 41 | `XXXXYYYY` | `XXXXYYYYB[q4,B]B` |
+| Reconocedora | `aaabb` | 5 | REJECTED | 17 | `XXXYY` | `XXXYY[q1,B]B` |
+| Reconocedora | `aabbbb` | 6 | REJECTED | 12 | `XXYYbb` | `XXYY[q3,B]bb` |
+| Alteradora | `10101` | 5 | ACCEPTED | 8 | `10110` | `101[q2,B]10` |
+| Alteradora | `11011` | 5 | ACCEPTED | 9 | `11100` | `11[q2,B]100` |
+| Alteradora | `11111` | 5 | ACCEPTED | 12 | `100000` | `[q2,B]100000` |
+| Alteradora | `10000` | 5 | ACCEPTED | 7 | `10001` | `1000[q2,B]1` |
+
+Motivos reportados en los rechazos:
+
+- `aaabb`: «no hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final» (falta una `b`).
+- `aabbbb`: «no hay regla para el estado 'q3' con caché el blanco leyendo 'b', y 'q3' no es final» (sobran `b`).
+
+En la alteradora, `ACCEPTED` significa que la máquina se detuvo normalmente en
+su estado final q2. El resultado de la transformación es la columna «Cinta
+final».
+
+### 3.3 Dónde están las IDs y cómo leerlas
+
+Para cada cadena, la CLI imprime, en este orden:
+
+1. Encabezado `=== Cadena k de 4: '<cadena>' (longitud n) ===`.
+2. `Resultado`, `Motivo`, `Pasos`, `Estado final`, `Caché final`, `Cabezal final`, `Cinta final` e `ID final`.
+3. Vista de la cinta final por posiciones (`posición` / `cinta` / `cabezal`), donde
+   se ven el índice −1 del desbordamiento y la celda que lee el cabezal.
+4. La tabla completa «Paso | ID | Transición aplicada», de ID_0 a ID_n, sin
+   recortar. La fila k muestra la regla de δ que transformó ID_k−1 en ID_k.
+
+Al final aparece el bloque `=== Resumen ===` con una fila por cadena. La
+notación de las IDs se describe en `docs/methodology.md`, §6. La caché se lee
+en el segundo componente de `[q,c]`: en la alteradora vale `1` mientras se
+propaga el acarreo (`[q1,1]`) y B al terminar (`[q2,B]`).
+
+### 3.4 Organización sugerida para el video
+
+| Parte | Contenido | Material |
+|---|---|---|
+| 1. Arquitectura | Capas Input → Model → Simulator → Trace → Output → CLI; δ solo se lee del YAML | `docs/architecture.md` §1, §6 |
+| 2. Contrato YAML | Campos del enunciado, blanco = entrada vacía, caché como parte de [q, c] | `docs/architecture.md` §4 |
+| 3. Reconocedora | Definición formal, tabla δ, ejecución de las 4 cadenas; recorrer la traza de `aaabbb` y explicar por qué se detienen `aaabb` y `aabbbb` | §1 de este documento |
+| 4. Alteradora | Caché como registro de acarreo, tabla δ, ejecución de las 4 cadenas; recorrer `11111 → 100000` y la posición −1 | §2 de este documento |
+| 5. Verificación | `python -m pytest -q`, pruebas exhaustivas y recorridos a mano de los laboratorios | §1.8, §2.10 |
+
+### 3.5 Limitaciones conocidas
+
+- La rúbrica no define cómo se mide la «dificultad» de una máquina; no se
+  asume ninguna puntuación para ese rubro.
+- La reconocedora no usa la caché (vale B en todas sus reglas); la alteradora
+  la usa como registro de acarreo.
+- La alteradora está diseñada para cadenas binarias no vacías; con ε produce
+  `1` (§2.6). Se detiene sobre el último bit modificado, no regresa el cabezal
+  al inicio del número.
+- La traza de una cadena larga es extensa (T(n) = 2n² + 2n + 1 en la
+  reconocedora) y las IDs se imprimen completas; la cota por defecto es de
+  10 000 transiciones por cadena (`--max-steps`).
+- El blanco se muestra como `B`; solo si `B` es un símbolo de la máquina se
+  cambia a `□`. Ninguna de las dos máquinas usa `B` como símbolo.
+
+### 3.6 Verificación de la suite
+
+`python -m pytest -q` en el mismo entorno: **310 pruebas aprobadas y 1 omitida**.
+La omitida es `test_unreadable_file`, que solo se ejecuta donde `chmod(0)`
+puede quitar el permiso de lectura (no ocurre en Windows ni con usuario root).

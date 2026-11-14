@@ -57,7 +57,21 @@ El desarrollo se organizará en 26 commits, distribuidos secuencialmente entre l
 
 ## 4. Máquinas de Turing implementadas
 
-*Pendiente de implementación.*
+Las dos máquinas se definen solo en YAML, en el formato del enunciado, y las
+ejecuta el mismo motor genérico. El diseño formal completo (componentes, tabla
+δ, corrección y recorridos a mano) está en [`docs/test_cases.md`](docs/test_cases.md).
+
+| Máquina | Archivo | Función | Estados | Reglas | Caché |
+|---|---|---|---|---|---|
+| Reconocedora | `machines/recognizer_anbn.yaml` | Acepta L = {aⁿbⁿ \| n ≥ 1} | q0–q4, F = {q4} | 10 | No se usa (B) |
+| Alteradora | `machines/transformer_binary_increment.yaml` | Escribe el sucesor binario: f(w) = value₂(w) + 1 | q0–q2, F = {q2} | 6 | Registro de acarreo (`1` o B) |
+
+- **Reconocedora:** marca en cada ronda la `a` más a la izquierda con `X` y la
+  primera `b` sin emparejar con `Y`. Cuando ya no quedan `a`, comprueba que solo
+  haya `Y` hasta el primer blanco (diseño de Hopcroft et al., 2001, ejemplo 8.2).
+- **Alteradora:** recorre el número hasta el final, carga el acarreo en la caché
+  y lo propaga de derecha a izquierda. Se detiene al reemplazar el primer `0`,
+  o agrega un `1` en la posición −1 si todos los bits son `1` (`11111 → 100000`).
 
 ## 5. Arquitectura
 
@@ -135,7 +149,26 @@ usa como referencia de las pruebas.
 
 ## 15. Casos de demostración
 
-*Pendiente de implementación.*
+```bash
+python main.py --machine machines/recognizer_anbn.yaml
+python main.py --machine machines/transformer_binary_increment.yaml
+```
+
+Resultados observados al ejecutar esos comandos:
+
+| Máquina | Cadena | Resultado | Pasos | Cinta final |
+|---|---|---|---|---|
+| Reconocedora | `aaabbb` | ACCEPTED | 25 | `XXXYYY` |
+| Reconocedora | `aaaabbbb` | ACCEPTED | 41 | `XXXXYYYY` |
+| Reconocedora | `aaabb` | REJECTED | 17 | `XXXYY` |
+| Reconocedora | `aabbbb` | REJECTED | 12 | `XXYYbb` |
+| Alteradora | `10101` | ACCEPTED | 8 | `10110` |
+| Alteradora | `11011` | ACCEPTED | 9 | `11100` |
+| Alteradora | `11111` | ACCEPTED | 12 | `100000` |
+| Alteradora | `10000` | ACCEPTED | 7 | `10001` |
+
+Las IDs completas de cada cadena, los motivos de rechazo y la forma de leer la
+salida se describen en [`docs/test_cases.md`](docs/test_cases.md), §3.
 
 ## 16. Resultados
 

@@ -169,3 +169,21 @@ Paso  ID              Transición aplicada
 
 Coinciden con las IDs resueltas a mano en el Laboratorio 10, inciso b, y la ID
 final es `BBB#XXXB[5,B]B` (`tests/test_id_formatter.py`).
+
+## 7. Procedimiento de los laboratorios en la salida de la CLI
+
+`python main.py --machine <archivo>` presenta los nueve pasos de la tabla del
+§2 en la salida estándar, en el mismo orden en que se resolvían a mano los
+laboratorios 9 y 10:
+
+| Paso | En la salida |
+|---|---|
+| 1–2. Componentes formales y δ | Bloque inicial `Q`, `Σ`, `Γ`, `q0`, `F`, `B` y número de reglas |
+| 3. Configuración inicial | Fila 0 de la tabla de IDs: `[q0,B]w` |
+| 4–6. Leer, buscar δ, escribir y mover | Columna «Transición aplicada» de cada fila |
+| 7. Registrar la nueva ID | Una fila por ID, de ID_0 a ID_n, sin recortar |
+| 8. Condición de parada | `Resultado` y `Motivo` (regla faltante, estado final o límite de pasos) |
+| 9. Resultado | `Cinta final`, `ID final`, vista de la cinta y resumen |
+
+Las dos máquinas de demostración y sus recorridos a mano están en
+`docs/test_cases.md`.
