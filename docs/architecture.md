@@ -132,3 +132,17 @@ texto indica `([q1, b], B, R)`. El simulador no corrige silenciosamente esos
 datos: el parser acepta la estructura y la validación reporta cada
 inconsistencia. La versión completa y ejecutable es la máquina del Laboratorio
 10 (E7).
+
+## 5. Entrada
+
+Toda falla de entrada es una subclase de `InputError` (`src/input/errors.py`,
+a su vez `ValueError`). Un error de entrada se reporta antes de simular y nunca
+se confunde con el rechazo de una cadena.
+
+### 5.1 Carga (`src/input/yaml_loader.py`)
+
+`load_yaml(path) -> dict` lee el archivo como UTF-8 (admite BOM) y lo interpreta
+con `yaml.safe_load` (PyYAML, s. f.), que no construye objetos de Python. Lanza
+`YamlLoadError` si el archivo no existe o no se puede leer, no es UTF-8, tiene
+sintaxis inválida, está vacío, contiene varios documentos o su raíz no es un
+mapeo.
