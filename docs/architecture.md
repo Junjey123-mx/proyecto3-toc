@@ -54,3 +54,20 @@ directamente la semántica de la MT.
 **Nombres.** Los campos de `Transition` no repiten `initial_state`/`final_state`
 del YAML para no confundirlos con el estado inicial y los estados finales de la
 máquina; la equivalencia exacta está en el docstring de `Transition`.
+
+## 3. Cinta
+
+`Tape` (`src/model/tape.py`) es la cinta de trabajo: un `dict[int, str]` con
+solo las celdas no blancas (Klein, 2025, usa la misma idea de cinta dispersa).
+
+| Operación | Semántica |
+|---|---|
+| `Tape.from_input(word)` | `word[i]` en la posición `i`; blanco en el resto |
+| `read(i)` | Símbolo almacenado o `None` (blanco) |
+| `write(i, s)` | Escribe `s`; escribir `None` borra la celda |
+| `snapshot()` | Copia de solo lectura (`MappingProxyType`) independiente de la cinta |
+
+Las posiciones son enteros sin cota, incluidos los negativos, de modo que el
+cabezal puede salir por la izquierda del input. La porción visible de una ID
+(del primer al último no blanco, extendida hasta el cabezal) se obtiene de las
+claves del snapshot y de `Configuration.head`; no se almacenan rangos visitados.
