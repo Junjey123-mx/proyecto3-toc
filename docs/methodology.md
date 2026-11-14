@@ -114,3 +114,58 @@ Los resultados resueltos a mano en los laboratorios se usan como oráculos en
 | 9, ej. 2 a) | `100` | 5 pasos, `101 q_halt B` | 5 transiciones, cinta `101`, cabezal 3 |
 | 9, ej. 2 b) | `10011` | 9 pasos, `101 q_halt 00` | 9 transiciones, cinta `10100`, cabezal 3 |
 | 9, ej. 2 c) | `11` | 6 pasos, `q_halt BB00` (se pierde el acarreo) | 6 transiciones, cinta `00`, cabezal −2 |
+
+## 6. Traza y notación de las IDs
+
+### 6.1 Traza (`src/simulator/trace.py`)
+
+`build_trace(result) -> Trace` copia cada `Configuration` de
+`result.configurations` en una `TraceEntry` (paso, estado, caché, cabezal,
+cinta de solo lectura, símbolo leído y regla aplicada) y verifica, sin volver a
+ejecutar la máquina, que la secuencia sea una computación válida:
+
+| Comprobación | Error si falla |
+|---|---|
+| ID_0 tiene paso 0 y ninguna regla aplicada | `TraceError` |
+| Los pasos son 0, 1, …, n, sin saltos | `TraceError` |
+| La clave de la regla de ID_k+1 es (estado, caché, símbolo leído) de ID_k | `TraceError` |
+| Estado, caché, cabezal y cinta de ID_k+1 son los que indica esa regla | `TraceError` |
+
+La traza nunca se trunca: `len(trace.entries) == result.steps + 1`.
+
+### 6.2 Notación (`src/output/id_formatter.py`, `src/utils/notation.py`)
+
+Se usa la notación del Laboratorio 10, X1…Xi-1 [q,c] Xi…Xn: la tupla de control
+`[estado,caché]` se escribe inmediatamente antes del símbolo bajo el cabezal.
+
+| Elemento | Convención | Ejemplo |
+|---|---|---|
+| Tupla de control en una ID | `[q,c]`, sin espacio | `Bab[q3,B]#Xab` |
+| Regla de δ | Notación del enunciado | `δ([q0, B], a) = ([q1, a], B, R)` |
+| Blanco | `B`; si `B` es símbolo de Γ o valor de caché, `□` (`blank_glyph`) | `[q0,B]B` |
+| Rango visible | De `min(0, cabezal, celdas no blancas)` a `max(longitud(w) − 1, cabezal, celdas no blancas)` | `BBB#XXXB[q5,B]B` |
+
+El rango incluye siempre la zona donde se escribió la entrada, para conservar
+los blancos que la máquina deja sobre ella (como en `BBB#XXXB[q5,B]B`), y
+siempre incluye el cabezal, aunque esté en una posición negativa
+(`[qhalt,B]BB00`, Laboratorio 9) o sobre un blanco después del contenido
+(`ab[q1,B]B`). Las IDs completas nunca se recortan.
+
+`format_id_lines(trace)` produce la tabla «Paso | ID | Transición aplicada».
+La fila k muestra la regla que transformó ID_k−1 en ID_k, por lo que cada fila
+se reconstruye a mano a partir de la anterior. Las primeras filas de
+`aab#aab` con la máquina del Laboratorio 10 (los estados se llaman `0`…`5`
+en ese YAML):
+
+```text
+Paso  ID              Transición aplicada
+   0  [0,B]aab#aab    —
+   1  B[1,a]ab#aab    δ([0, B], a) = ([1, a], B, R)
+   2  Ba[1,a]b#aab    δ([1, a], a) = ([1, a], a, R)
+   3  Bab[1,a]#aab    δ([1, a], b) = ([1, a], b, R)
+   4  Bab#[2,a]aab    δ([1, a], #) = ([2, a], #, R)
+   5  Bab[3,B]#Xab    δ([2, a], a) = ([3, B], X, L)
+```
+
+Coinciden con las IDs resueltas a mano en el Laboratorio 10, inciso b, y la ID
+final es `BBB#XXXB[5,B]B` (`tests/test_id_formatter.py`).
