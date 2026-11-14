@@ -53,5 +53,5 @@ desktop.ini
 *.pyc
 
 # Local execution output
-output/
-reports/
+/output/
+/reports/
