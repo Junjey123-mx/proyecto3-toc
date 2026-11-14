@@ -143,10 +143,14 @@ se confunde con el rechazo de una cadena.
 ### 5.1 Carga (`src/input/yaml_loader.py`)
 
 `load_yaml(path) -> dict` lee el archivo como UTF-8 (admite BOM) y lo interpreta
-con `yaml.safe_load` (PyYAML, s. f.), que no construye objetos de Python. Lanza
-`YamlLoadError` si el archivo no existe o no se puede leer, no es UTF-8, tiene
-sintaxis inválida, está vacío, contiene varios documentos o su raíz no es un
-mapeo.
+con el `SafeLoader` de PyYAML (PyYAML, s. f.), que no construye objetos de
+Python. `yaml.safe_load(s)` equivale a `yaml.load(s, SafeLoader)`; el proyecto
+usa una subclase de `SafeLoader` que solo agrega el rechazo de **claves
+repetidas** en un mismo mapeo, porque PyYAML conservaría en silencio el último
+valor (p. ej. dos `tape_input` en una regla). Lanza `YamlLoadError` si el
+archivo no existe o no se puede leer, no es UTF-8, tiene sintaxis inválida o
+escalares imposibles (`2026-13-01`), repite una clave, está vacío, contiene
+varios documentos o su raíz no es un mapeo.
 
 ### 5.2 Interpretación (`src/input/machine_parser.py`)
 

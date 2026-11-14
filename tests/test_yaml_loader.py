@@ -85,6 +85,34 @@ def test_python_tags_are_never_executed(tmp_path):
     assert not marker.exists()
 
 
+def test_repeated_key_inside_a_rule_is_rejected(tmp_path):
+    text = "delta:\n- params:\n    tape_input: a\n    tape_input:\n"
+    with pytest.raises(YamlLoadError, match="clave repetida 'tape_input'"):
+        load_yaml(write(tmp_path, text))
+
+
+def test_repeated_root_key_is_rejected(tmp_path):
+    text = "simulation_strings:\n- ab\nsimulation_strings: []\n"
+    with pytest.raises(YamlLoadError, match="clave repetida 'simulation_strings'"):
+        load_yaml(write(tmp_path, text))
+
+
+def test_same_key_in_different_mappings_is_allowed(tmp_path):
+    text = "delta:\n- params: {tape_input: a}\n- params: {tape_input: b}\n"
+    assert load_yaml(write(tmp_path, text)) == {"delta": [{"params": {"tape_input": "a"}}, {"params": {"tape_input": "b"}}]}
+
+
+def test_merge_keys_are_not_mistaken_for_repeated_keys(tmp_path):
+    text = "base: &b {x: 1, y: 1}\nother:\n  <<: *b\n  x: 2\n"
+    assert load_yaml(write(tmp_path, text))["other"] == {"x": 2, "y": 1}
+
+
+@pytest.mark.parametrize("scalar", ["2026-13-01", "0000-00-00", '!!int "abc"'])
+def test_impossible_scalars_are_load_errors_not_bare_value_errors(tmp_path, scalar):
+    with pytest.raises(YamlLoadError, match="YAML inválido"):
+        load_yaml(write(tmp_path, f"simulation_strings:\n- {scalar}\n"))
+
+
 def test_load_errors_are_input_errors():
     assert issubclass(YamlLoadError, InputError)
     assert issubclass(InputError, ValueError)
