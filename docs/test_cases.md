@@ -315,3 +315,34 @@ la cinta final, de −1 a 4, es `100000`.
 | `11011` | 5 | `11100` | 5 + 2 + 2 = 9 |
 | `11111` | 5 | `100000` | 5 + 5 + 2 = 12 |
 | `10000` | 5 | `10001` | 5 + 0 + 2 = 7 |
+
+### 2.10 Pruebas automatizadas (`tests/test_transformer.py`)
+
+La salida se compara con la definición de f (value₂(w) + 1 en binario,
+conservando los ceros a la izquierda). Las pruebas también comparan el estado
+final, la caché, la ID final y los pasos reales con T(w) = |w| + t + 2.
+
+| Prueba | Qué verifica |
+|---|---|
+| Demostración | Las cuatro cadenas de §2.9: salida, pasos, estado `q2`, caché B e ID final |
+| Complementarias | `0→1`, `1→10`, `111→1000`, `1010→1011`, `0011→0100`, `0111→1000`, `01→10` |
+| Índice negativo | En `11111` el bit nuevo queda en la posición −1, con el cabezal sobre él |
+| Recorridos a mano | Las 13 IDs de `11111` (con el número de regla de §2.5) y las 9 de `10101` |
+| Caché | Vale `1` exactamente en las IDs con estado q1 y B en el resto |
+| Entradas largas | 1⁶⁰, 10⁵⁹, (10)³⁰, 0⁴⁰1²⁰ |
+| Exhaustiva | Las 2046 cadenas binarias de longitud 1 a 10: salida y número de pasos |
+| No borra la cinta | La salida tiene longitud \|w\| o \|w\| + 1 y solo contiene 0 y 1 |
+| Entrada vacía | Se procesa como 0: salida `1` en 2 pasos |
+| Límite de pasos | `11111` con `max_steps=11` da `LIMIT_EXCEEDED`; con 12 produce `100000` |
+| Independencia | Simular otra cadena entre dos ejecuciones de `11111` no cambia su traza |
+
+Resultados observados con
+`python main.py --machine machines/transformer_binary_increment.yaml`
+(coinciden con los esperados de §2.9):
+
+| Cadena | Resultado | Pasos | Cinta final | ID final |
+|---|---|---|---|---|
+| `10101` | ACCEPTED | 8 | `10110` | `101[q2,B]10` |
+| `11011` | ACCEPTED | 9 | `11100` | `11[q2,B]100` |
+| `11111` | ACCEPTED | 12 | `100000` | `[q2,B]100000` |
+| `10000` | ACCEPTED | 7 | `10001` | `1000[q2,B]1` |
