@@ -71,3 +71,64 @@ Las posiciones son enteros sin cota, incluidos los negativos, de modo que el
 cabezal puede salir por la izquierda del input. La porción visible de una ID
 (del primer al último no blanco, extendida hasta el cabezal) se obtiene de las
 claves del snapshot y de `Configuration.head`; no se almacenan rangos visitados.
+
+## 4. Contrato YAML del curso y búsqueda en δ
+
+### 4.1 Evidencia de las fuentes
+
+| # | Fuente | Evidencia |
+|---|---|---|
+| E1 | Enunciado, p. 2 (`estructura-mt.yaml`) | «para definir el símbolo de blank, usaremos null o None, que en yaml se expresa con una entrada vacía» |
+| E2 | Enunciado, p. 2 | `δ([q0, B], a) = ([q1, a], B, R)`: la caché es el segundo componente de la tupla de control |
+| E3 | Enunciado, p. 3 (`example_mt_1.yaml`) | Esa regla se escribe con `params.mem_cache_value` vacío (B), `output.mem_cache_value: a` y `tape_output` vacío (B) |
+| E4 | Enunciado, p. 2 | `mem_cache_value`: «Puede ser blank o contener algo»; `tape_displacement`: «L, R o S» |
+| E5 | Enunciado, pp. 2–3 | `final` singular (`'5'`); estados entre comillas (`'0'`…`'5'`); `"#"` entre comillas |
+| E6 | Enunciado, p. 2 | `tape_alphabet` «incluye los símbolos de alphabet también» |
+| E7 | Laboratorio 10, ejercicio 1 | La máquina completa del ejemplo: L = {α#α}, Σ = {a, b, #}, Γ = {a, b, #, B, X}, F = {q5}; ID inicial `[q0, B]aab#aab` (caché inicial B) |
+| E8 | Deck, «Language of a TM» | L(M) = {w ∈ Σ* \| q0w ⊢* αpβ, p ∈ F} |
+| E9 | Laboratorio 9, ejercicio 3 | Se definen reglas salientes de q_acc y se pide omitirlas: no influyen en la aceptación |
+
+### 4.2 Decisiones adoptadas
+
+| # | Decisión | Fundamento |
+|---|---|---|
+| D1 | El blanco es exactamente el `null` de YAML (entrada vacía, `null` o `~`), que PyYAML entrega como `None`. `'B'`, `'None'`, `'null'` y `''` **no** son el blanco: `'B'` es un símbolo ordinario y `''` es inválido | E1, E3 |
+| D2 | La clave de δ es (estado, caché, símbolo leído); la caché inicial es el blanco | E2, E3, E7 |
+| D3 | La caché es un único valor de la unidad de control (no tiene cabezal ni posiciones; no es una segunda cinta). Su dominio es el blanco o cualquier cadena no vacía; no se restringe a Γ porque ninguna fuente lo exige | E2, E4 |
+| D4 | δ es una función: dos reglas con la misma clave, idénticas o en conflicto, son un error de configuración | Determinismo (deck, «The Turing Machine») |
+| D5 | Si no hay regla para la clave actual, la MT se detiene; nunca se infiere una regla implícita | Hopcroft et al. (2001), δ parcial |
+| D6 | Un estado de F es terminal: alcanzarlo acepta y detiene la simulación. Las reglas que salen de F se admiten, pero nunca se ejecutan | E8, E9 |
+| D7 | Estados, símbolos y cadenas deben ser cadenas YAML; los valores numéricos o booleanos se rechazan con la indicación de entrecomillarlos (`'0'`), en lugar de convertirlos | E5; YAML 1.1 lee `0101` como 65 y `yes` como `True` |
+
+### 4.3 Equivalencia YAML → modelo
+
+| YAML (`delta[i]`) | `Transition` | Blanco permitido |
+|---|---|---|
+| `params.initial_state` | `state` | No |
+| `params.mem_cache_value` | `cache` | Sí |
+| `params.tape_input` | `read` | Sí |
+| `output.final_state` | `next_state` | No |
+| `output.mem_cache_value` | `next_cache` | Sí |
+| `output.tape_output` | `write` | Sí |
+| `output.tape_displacement` | `move` (`Move[...]`) | No |
+
+Las siete claves son obligatorias en cada regla; una clave presente con valor
+vacío significa blanco, una clave ausente es un error.
+
+### 4.4 Búsqueda
+
+`TuringMachine.find_transition(state, cache, symbol) -> Transition | None`
+consulta un diccionario construido una sola vez al crear la máquina, en tiempo
+O(1) esperado. Los duplicados se detectan en esa construcción (D4) con las
+posiciones de ambas reglas. `None` significa «no hay regla» (D5).
+
+### 4.5 Observaciones sobre el ejemplo del enunciado
+
+El enunciado declara su ejemplo como **incompleto** y, tal como está impreso,
+no satisface la definición formal: `tape_alphabet` omite `a` y `b` (E6), y las
+cadenas usan `#`, que no aparece en `alphabet` (E7 confirma Σ = {a, b, #}).
+Además, su segunda regla escribe `a` en la caché al leer `b`, mientras que el
+texto indica `([q1, b], B, R)`. El simulador no corrige silenciosamente esos
+datos: el parser acepta la estructura y la validación reporta cada
+inconsistencia. La versión completa y ejecutable es la máquina del Laboratorio
+10 (E7).

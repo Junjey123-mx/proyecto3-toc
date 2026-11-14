@@ -1,6 +1,6 @@
 """Descripción formal M = (Q, Σ, Γ, δ, q0, B, F) de una MT de una cinta con caché."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.model.transition import Symbol, Transition
 
@@ -14,6 +14,10 @@ class TuringMachine:
     orden del YAML. Los conjuntos se normalizan a ``frozenset`` y δ a ``tuple``;
     ``final_states`` acepta también un único estado, como ``final: '5'`` del
     enunciado. La coherencia entre componentes la verifica ``validate_machine``.
+
+    δ se indexa por (estado, caché, símbolo leído). Dos reglas con la misma clave,
+    idénticas o no, hacen que δ no sea una función: la construcción falla con
+    ``ValueError`` indicando sus posiciones en ``transitions``.
     """
 
     states: frozenset[str]
@@ -22,6 +26,9 @@ class TuringMachine:
     initial_state: str
     final_states: frozenset[str]
     transitions: tuple[Transition, ...]
+    _index: dict[tuple[str, Symbol, Symbol], Transition] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         for name in ("states", "input_alphabet", "tape_alphabet"):
@@ -29,3 +36,19 @@ class TuringMachine:
         final = self.final_states
         object.__setattr__(self, "final_states", frozenset([final] if isinstance(final, str) else final))
         object.__setattr__(self, "transitions", tuple(self.transitions))
+
+        index: dict[tuple[str, Symbol, Symbol], Transition] = {}
+        for position, rule in enumerate(self.transitions):
+            first = index.get(rule.key)
+            if first is not None:
+                kind = "duplicadas" if first == rule else "en conflicto"
+                raise ValueError(
+                    f"δ no es determinista: las reglas {self.transitions.index(first)} y "
+                    f"{position} están {kind} para (estado, caché, lectura) = {rule.key!r}"
+                )
+            index[rule.key] = rule
+        object.__setattr__(self, "_index", index)
+
+    def find_transition(self, state: str, cache: Symbol, symbol: Symbol) -> Transition | None:
+        """Regla δ([state, cache], symbol) o ``None`` si no está definida (la MT se detiene)."""
+        return self._index.get((state, cache, symbol))
