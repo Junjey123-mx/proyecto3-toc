@@ -99,6 +99,7 @@ claves del snapshot y de `Configuration.head`; no se almacenan rangos visitados.
 | D5 | Si no hay regla para la clave actual, la MT se detiene; nunca se infiere una regla implícita | Hopcroft et al. (2001), δ parcial |
 | D6 | Un estado de F es terminal: alcanzarlo acepta y detiene la simulación. Las reglas que salen de F se admiten, pero nunca se ejecutan | E8, E9 |
 | D7 | Estados, símbolos y cadenas deben ser cadenas YAML; los valores numéricos o booleanos se rechazan con la indicación de entrecomillarlos (`'0'`), en lugar de convertirlos | E5; YAML 1.1 lee `0101` como 65 y `yes` como `True` |
+| D8 | Cada símbolo de Σ y de Γ es un único carácter. En Σ es necesario porque `simulation_strings` se escribe sin separadores (`aab#aab`); en Γ mantiene inequívoca la ID `X1…Xi-1 q Xi…Xn` | E3, E5; deck, «Instantaneous Descriptions» |
 
 ### 4.3 Equivalencia YAML → modelo
 
@@ -170,3 +171,21 @@ del Laboratorio 10 en el formato del enunciado (20 reglas con w ∈ {a, b}
 expandido) y sirve como referencia ejecutable para las pruebas.
 `tests/fixtures/statement_example_mt_1.yaml` transcribe literalmente el ejemplo
 incompleto del enunciado para comprobar la compatibilidad del parser.
+
+### 5.3 Validación (`src/input/machine_validator.py`)
+
+`validate_machine(machine, strings) -> None` comprueba la definición formal y
+reúne **todos** los problemas en un único `MachineValidationError`, cuya lista
+`errors` indica el campo YAML de cada uno. No modifica la máquina.
+
+| Regla | Campo reportado |
+|---|---|
+| Q no vacío; q0 ∈ Q; F no vacío y F ⊆ Q | `q_states.*` |
+| Σ no vacío; B ∉ Σ; B ∈ Γ; Σ ⊆ Γ | `alphabet`, `tape_alphabet` |
+| Símbolos de un carácter (D8) | `alphabet`, `tape_alphabet` |
+| Estados de cada regla ∈ Q; lectura y escritura ∈ Γ | `delta[i].params.*`, `delta[i].output.*` |
+| Cada cadena ∈ Σ* | `simulation_strings[k]` |
+
+No se valida: el dominio de la caché (D3) ni las reglas que salen de F (D6).
+La separación de responsabilidades es: estructura y tipos en el parser,
+determinismo en `TuringMachine`, coherencia entre componentes en el validador.

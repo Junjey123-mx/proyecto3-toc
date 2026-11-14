@@ -14,3 +14,14 @@ class YamlLoadError(InputError):
 
 class MachineParseError(InputError):
     """El documento no sigue la estructura o los tipos del esquema YAML del curso."""
+
+
+class MachineValidationError(InputError):
+    """La máquina o sus cadenas no satisfacen la definición formal.
+
+    ``errors`` contiene un mensaje por problema, cada uno con su campo YAML.
+    """
+
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = list(errors)
+        super().__init__("la máquina no es válida:\n" + "\n".join(f"- {error}" for error in self.errors))
