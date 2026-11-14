@@ -180,3 +180,138 @@ Resultados observados con `python main.py --machine machines/recognizer_anbn.yam
 | `aaaabbbb` | ACCEPTED | 41 | `XXXXYYYYB[q4,B]B` |
 | `aaabb` | REJECTED | 17 | `XXXYY[q1,B]B` |
 | `aabbbb` | REJECTED | 12 | `XXYY[q3,B]bb` |
+
+## 2. Máquina alteradora: incremento binario con acarreo
+
+### 2.1 Función calculada
+
+Para una cadena binaria w = bₖ₋₁…b₁b₀ no vacía (bit más significativo a la
+izquierda):
+
+  f(w) = representación binaria de value₂(w) + 1
+
+La salida conserva los ceros a la izquierda de la entrada (`0011 → 0100`) y,
+cuando todos los bits son 1, agrega un bit `1` a la izquierda
+(`11111 → 100000`), de modo que nunca se pierde el acarreo. Esta es la
+diferencia con la máquina del Laboratorio 9, ejercicio 2, que conserva la
+longitud y convierte `11` en `00` (`tests/test_engine.py`).
+
+### 2.2 Definición formal
+
+M₂ = (Q, Σ, Γ, δ, q0, B, F) con:
+
+| Componente | Valor |
+|---|---|
+| Q | {q0, q1, q2} |
+| Σ | {0, 1} |
+| Γ | {0, 1, B} |
+| q0 | q0 |
+| B | blanco (entrada vacía en el YAML) |
+| F | {q2} |
+| Caché | Registro de acarreo c ∈ {B, 1}: `1` = hay un acarreo pendiente, B = no hay acarreo |
+
+En el YAML, los estados se escriben sin comillas (`q0`) y los símbolos `'0'` y
+`'1'` entre comillas, como exige el contrato (D7). Lo mismo vale para el valor
+de caché `'1'`.
+
+### 2.3 Papel de los estados y de la caché
+
+| Estado | Caché | Papel |
+|---|---|---|
+| q0 | B | Barrido a la derecha hasta el primer blanco después del número |
+| q1 | 1 | Propagación del acarreo de derecha a izquierda: suma c al bit leído |
+| q2 | B | Fin: el acarreo se absorbió (estado final, terminal) |
+
+La caché funciona como el «almacenamiento en el estado» de Hopcroft et al.
+(2001, §8.3.1): la tupla de control [q, c] guarda el acarreo de la suma.
+Al llegar al final del número, la regla 3 carga c = 1 (el «+1»). Cada regla de
+q1 calcula x + c sobre el bit leído x: si el resultado es 10, escribe 0 y
+conserva c = 1; si es 1, escribe 1, vacía la caché y se detiene. Por eso la ID
+final siempre muestra `[q2,B]`: ya no queda acarreo pendiente.
+
+### 2.4 Algoritmo
+
+1. **Barrido** (q0): cruzar los bits hacia la derecha sin modificarlos.
+2. **Retorno con acarreo inicial** (q0 → q1): en el primer blanco, cargar c = 1 en la caché y moverse a la izquierda, al bit menos significativo.
+3. **Propagación** (q1, c = 1): cada `1` se reemplaza por `0` y el acarreo continúa a la izquierda.
+4. **Detención al reemplazar 0** (q1 → q2): el primer `0` se reemplaza por `1`, la caché se vacía y la máquina se detiene sin moverse.
+5. **Desbordamiento** (q1 → q2): si se agotan los bits (q1 lee el blanco a la izquierda del número), se escribe `1` en esa celda y la máquina se detiene; el resultado tiene un bit más.
+
+### 2.5 Tabla de transiciones
+
+| # | Regla | Paso del algoritmo |
+|---|---|---|
+| 1 | δ([q0, B], 0) = ([q0, B], 0, R) | Barrido |
+| 2 | δ([q0, B], 1) = ([q0, B], 1, R) | Barrido |
+| 3 | δ([q0, B], B) = ([q1, 1], B, L) | Carga el acarreo inicial c = 1 |
+| 4 | δ([q1, 1], 1) = ([q1, 1], 0, L) | 1 + 1 = 10: escribe 0, el acarreo sigue |
+| 5 | δ([q1, 1], 0) = ([q2, B], 1, S) | 0 + 1 = 1: escribe 1, vacía la caché y se detiene |
+| 6 | δ([q1, 1], B) = ([q2, B], 1, S) | Desbordamiento: nuevo bit más significativo |
+
+Las seis claves son distintas. Ninguna regla sale de q2, y q1 solo se alcanza
+con c = 1, por lo que no hacen falta reglas para (q1, B, ·). Con una entrada
+binaria, la máquina siempre se detiene en q2: el resultado es `ACCEPTED` y la
+salida es el contenido final de la cinta.
+
+### 2.6 Índice negativo, cinta final y número de pasos
+
+- La entrada ocupa las posiciones 0 … |w|−1. En el desbordamiento, q1 llega a la
+  posición −1 (el blanco a la izquierda del bit más significativo) y escribe ahí
+  el `1` nuevo. La cinta dispersa admite posiciones negativas, así que no hace
+  falta desplazar la entrada.
+- La regla 3 escribe el blanco sobre una celda que ya estaba en blanco
+  (posición |w|), y ninguna otra regla escribe el blanco. Por eso el resultado
+  no tiene blancos intermedios ni laterales.
+- **Salida:** el contenido de la cinta desde la primera hasta la última celda
+  no blanca (`tape_contents`, `src/output/tape_formatter.py`). Si apareciera un
+  blanco intermedio, se mostraría como `B` en lugar de ocultarse.
+- **Pasos:** si w termina en t unos, T(w) = |w| + 1 + t + 1 = |w| + t + 2
+  (barrido, carga del acarreo, t propagaciones y la regla que se detiene).
+  En el desbordamiento, t = |w| y T = 2|w| + 2.
+- **Entrada vacía:** no forma parte del dominio de f, pero las reglas la
+  procesan como el número 0: la regla 3 se aplica en la posición 0, la regla 6
+  escribe `1` en −1 y la salida es `1`.
+
+### 2.7 Recorrido a mano: `11111 → 100000` (12 pasos)
+
+| Paso | ID | Regla |
+|---|---|---|
+| 0 | `[q0,B]11111` | — |
+| 1 | `1[q0,B]1111` | 2 |
+| 2 | `11[q0,B]111` | 2 |
+| 3 | `111[q0,B]11` | 2 |
+| 4 | `1111[q0,B]1` | 2 |
+| 5 | `11111[q0,B]B` | 2 |
+| 6 | `1111[q1,1]1` | 3 |
+| 7 | `111[q1,1]10` | 4 |
+| 8 | `11[q1,1]100` | 4 |
+| 9 | `1[q1,1]1000` | 4 |
+| 10 | `[q1,1]10000` | 4 |
+| 11 | `[q1,1]B00000` | 4 |
+| 12 | `[q2,B]100000` | 6 |
+
+En ID_11 el cabezal está en la posición −1. La regla 6 escribe el `1` nuevo y
+la cinta final, de −1 a 4, es `100000`.
+
+### 2.8 Recorrido a mano: `10101 → 10110` (8 pasos)
+
+| Paso | ID | Regla |
+|---|---|---|
+| 0 | `[q0,B]10101` | — |
+| 1 | `1[q0,B]0101` | 2 |
+| 2 | `10[q0,B]101` | 1 |
+| 3 | `101[q0,B]01` | 2 |
+| 4 | `1010[q0,B]1` | 1 |
+| 5 | `10101[q0,B]B` | 2 |
+| 6 | `1010[q1,1]1` | 3 |
+| 7 | `101[q1,1]00` | 4 |
+| 8 | `101[q2,B]10` | 5 |
+
+### 2.9 Cadenas de la demostración
+
+| Cadena | Longitud | Salida esperada | Pasos esperados (longitud + t + 2) |
+|---|---|---|---|
+| `10101` | 5 | `10110` | 5 + 1 + 2 = 8 |
+| `11011` | 5 | `11100` | 5 + 2 + 2 = 9 |
+| `11111` | 5 | `100000` | 5 + 5 + 2 = 12 |
+| `10000` | 5 | `10001` | 5 + 0 + 2 = 7 |
