@@ -146,3 +146,27 @@ con `yaml.safe_load` (PyYAML, s. f.), que no construye objetos de Python. Lanza
 `YamlLoadError` si el archivo no existe o no se puede leer, no es UTF-8, tiene
 sintaxis inválida, está vacío, contiene varios documentos o su raíz no es un
 mapeo.
+
+### 5.2 Interpretación (`src/input/machine_parser.py`)
+
+`parse_machine(document) -> tuple[TuringMachine, list[str]]` aplica la
+equivalencia de §4.3 y devuelve la máquina con `simulation_strings` en el orden
+del archivo. Comprueba **estructura y tipos** y lanza `MachineParseError` con la
+ruta del campo (`delta[3].output.tape_displacement`):
+
+- claves obligatorias presentes (las claves adicionales se ignoran);
+- `q_list`, `alphabet`, `tape_alphabet`, `delta` y `simulation_strings` son listas;
+- estados y símbolos son cadenas no vacías, sin conversión de tipos (D7);
+- el blanco solo se admite en `tape_alphabet`, `mem_cache_value`, `tape_input`
+  y `tape_output` (D1);
+- `final` es un estado o una lista de estados;
+- `tape_displacement` es exactamente `L`, `R` o `S`;
+- no hay elementos repetidos en las listas de estados y alfabetos;
+- no hay dos reglas con la misma clave (D4, detectado por `TuringMachine`);
+- cada cadena de `simulation_strings` es una cadena YAML; `''` es la entrada vacía.
+
+**Archivos de ejemplo.** `machines/examples/basic_machine.yaml` es la máquina
+del Laboratorio 10 en el formato del enunciado (20 reglas con w ∈ {a, b}
+expandido) y sirve como referencia ejecutable para las pruebas.
+`tests/fixtures/statement_example_mt_1.yaml` transcribe literalmente el ejemplo
+incompleto del enunciado para comprobar la compatibilidad del parser.

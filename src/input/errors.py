@@ -10,3 +10,7 @@ class InputError(ValueError):
 
 class YamlLoadError(InputError):
     """El archivo no se pudo leer o no contiene un único documento YAML con un mapeo."""
+
+
+class MachineParseError(InputError):
+    """El documento no sigue la estructura o los tipos del esquema YAML del curso."""
