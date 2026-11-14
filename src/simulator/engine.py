@@ -1,0 +1,55 @@
+"""Motor de simulación: ID_0, transiciones sucesivas y condición de parada."""
+
+from src.model.configuration import Configuration
+from src.model.simulation_result import Outcome, SimulationResult
+from src.model.tape import Tape
+from src.model.transition import BLANK, Symbol
+from src.model.turing_machine import TuringMachine
+from src.simulator.step import step
+
+DEFAULT_MAX_STEPS = 10_000
+"""Cota operativa de transiciones; la parada no es decidible en general."""
+
+
+def simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STEPS) -> SimulationResult:
+    """Simula ``word`` desde ID_0 = [q0, B] w y conserva todas las IDs.
+
+    ID_0 tiene el estado inicial, la caché en blanco, el cabezal en la posición 0
+    (primer símbolo de ``word``, o blanco si es vacía) y ``word`` en la cinta.
+    Antes de cada transición se comprueba, en este orden:
+
+    1. estado ∈ F → ``ACCEPTED`` (los estados finales son terminales);
+    2. ya se aplicaron ``max_steps`` transiciones → ``LIMIT_EXCEEDED``;
+    3. no hay regla aplicable → ``REJECTED``.
+
+    Así, alcanzar F exactamente en la transición ``max_steps`` acepta. Cada
+    llamada parte de una configuración nueva, por lo que las simulaciones no
+    comparten estado. Lanza ``ValueError`` si ``max_steps`` < 1 o si ``word`` usa
+    símbolos fuera de Σ.
+    """
+    if max_steps < 1:
+        raise ValueError(f"max_steps debe ser un entero positivo, no {max_steps!r}")
+    outside = sorted(set(word) - machine.input_alphabet)
+    if outside:
+        raise ValueError(f"la cadena {word!r} usa símbolos fuera del alfabeto de entrada: {outside}")
+
+    current = Configuration(0, machine.initial_state, BLANK, 0, Tape.from_input(word).snapshot())
+    history = [current]
+    while current.state not in machine.final_states:
+        if current.step_index >= max_steps:
+            reason = f"se alcanzó el límite de {max_steps} transiciones sin detenerse"
+            return SimulationResult(word, Outcome.LIMIT_EXCEEDED, history, reason)
+        following = step(machine, current)
+        if following is None:
+            reason = (
+                f"no hay regla para el estado {current.state!r} con caché {_show(current.cache)} "
+                f"leyendo {_show(current.scanned)}, y {current.state!r} no es final"
+            )
+            return SimulationResult(word, Outcome.REJECTED, history, reason)
+        history.append(following)
+        current = following
+    return SimulationResult(word, Outcome.ACCEPTED, history, f"alcanzó el estado final {current.state!r}")
+
+
+def _show(symbol: Symbol) -> str:
+    return "el blanco" if symbol is BLANK else repr(symbol)

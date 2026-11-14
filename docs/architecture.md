@@ -189,3 +189,50 @@ reúne **todos** los problemas en un único `MachineValidationError`, cuya lista
 No se valida: el dominio de la caché (D3) ni las reglas que salen de F (D6).
 La separación de responsabilidades es: estructura y tipos en el parser,
 determinismo en `TuringMachine`, coherencia entre componentes en el validador.
+
+## 6. Interfaz pública del Gate 01
+
+Firmas vigentes según el código probado. El Gate 02 consume estas interfaces
+sin modificar el núcleo; cualquier extensión debe hacerse con interfaz
+explícita y pruebas.
+
+```python
+# src/input
+load_yaml(path: str | Path) -> dict[str, Any]                            # YamlLoadError
+parse_machine(document: Mapping[str, Any]) -> tuple[TuringMachine, list[str]]  # MachineParseError
+validate_machine(machine: TuringMachine, strings: list[str]) -> None     # MachineValidationError (.errors)
+# Todas las excepciones anteriores heredan de InputError (ValueError).
+
+# src/model
+BLANK = None                                         # símbolo blanco; Symbol = str | None
+Move.L / Move.R / Move.S                             # .value = -1 / +1 / 0; .name = "L" / "R" / "S"
+Transition(state, cache, read, next_state, next_cache, write, move)       # .key
+TuringMachine(states, input_alphabet, tape_alphabet, initial_state, final_states, transitions)
+TuringMachine.find_transition(state, cache, symbol) -> Transition | None
+Tape(cells=None); Tape.from_input(word); .read(i); .write(i, s); .snapshot()
+Configuration(step_index, state, cache, head, tape, applied=None)        # .scanned
+SimulationResult(word, outcome, configurations, reason)                  # .final, .steps
+Outcome.ACCEPTED / Outcome.REJECTED / Outcome.LIMIT_EXCEEDED
+
+# src/simulator
+step(machine: TuringMachine, current: Configuration) -> Configuration | None
+simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STEPS) -> SimulationResult
+DEFAULT_MAX_STEPS = 10_000
+```
+
+Flujo mínimo de uso:
+
+```python
+document = load_yaml(path)
+machine, strings = parse_machine(document)
+validate_machine(machine, strings)
+for word in strings:
+    result = simulate(machine, word)
+    for config in result.configurations:   # ID_0 … ID_n
+        ...                                 # config.state, .cache, .head, .tape, .applied
+    result.outcome, result.reason, result.final.tape
+```
+
+Para dibujar una ID: las celdas no blancas son `config.tape` (posición →
+símbolo); toda otra posición es blanco. La porción visible va desde
+`min([config.head, *config.tape])` hasta `max([config.head, *config.tape])`.
