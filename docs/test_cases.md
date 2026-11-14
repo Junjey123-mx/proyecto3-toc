@@ -152,3 +152,31 @@ Pasos de los rechazos: en `aaabb`, cada una de las dos primeras rondas aplica 7
 reglas y la tercera se detiene tras 3 (marca y dos cruces), 7 + 7 + 3 = 17. En
 `aabbbb`, cada ronda aplica 5 reglas y la comprobación se detiene tras 2,
 5 + 5 + 2 = 12.
+
+### 1.8 Pruebas automatizadas (`tests/test_recognizer.py`)
+
+Las pruebas cargan `machines/recognizer_anbn.yaml` con el mismo flujo que la
+CLI (`load_yaml` → `parse_machine` → `validate_machine` → `simulate`) y comparan
+resultado, pasos, estado final, ID final y motivo, no solo el veredicto.
+
+| Prueba | Qué verifica |
+|---|---|
+| Demostración | Las cuatro cadenas de §1.7: resultado, pasos, estado e ID final |
+| Rechazos justificados | La última ID de `aaabb` y `aabbbb` no tiene regla y su estado no es final |
+| Recorridos a mano | Las 14 IDs de `aabb` (con el número de regla de §1.4) y las 5 de `abb` |
+| Complementarias | `ab`, `aabb` aceptadas; `abb`, `aab`, `ba`, `abab`, `aaaa`, `bbbb`, ε, `aabba`, `abba` rechazadas, con el estado y el símbolo donde se detienen |
+| Fórmula de pasos | T(n) = 2n² + 2n + 1 para n = 1, 2, 3, 4, 5, 10, 25 |
+| Cadenas largas desbalanceadas | a¹⁰b⁹, a⁹b¹⁰, a²⁵b²⁴, `a`, `b` rechazadas |
+| Exhaustiva | Las 2047 cadenas sobre {a, b} de longitud ≤ 10 coinciden con la definición de L |
+| Límite de pasos | `aaaabbbb` con `max_steps=40` da `LIMIT_EXCEEDED` (no `REJECTED`); con 41 se acepta |
+| Independencia | Simular otra cadena entre dos ejecuciones de `aaabbb` no cambia su traza |
+
+Resultados observados con `python main.py --machine machines/recognizer_anbn.yaml`
+(coinciden con los esperados de §1.7):
+
+| Cadena | Resultado | Pasos | ID final |
+|---|---|---|---|
+| `aaabbb` | ACCEPTED | 25 | `XXXYYYB[q4,B]B` |
+| `aaaabbbb` | ACCEPTED | 41 | `XXXXYYYYB[q4,B]B` |
+| `aaabb` | REJECTED | 17 | `XXXYY[q1,B]B` |
+| `aabbbb` | REJECTED | 12 | `XXYY[q3,B]bb` |
