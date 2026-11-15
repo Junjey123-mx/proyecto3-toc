@@ -1,0 +1,193 @@
+Máquina: machines/recognizer_anbn.yaml
+  Q  = {q0, q1, q2, q3, q4}
+  Σ  = {a, b}
+  Γ  = {X, Y, a, b, B}
+  q0 = q0
+  F  = {q4}
+  B  = B (blanco)
+  δ  = 10 reglas, en el orden del YAML:
+     1. δ([q0, B], a) = ([q1, B], X, R)
+     2. δ([q0, B], Y) = ([q3, B], Y, R)
+     3. δ([q1, B], a) = ([q1, B], a, R)
+     4. δ([q1, B], Y) = ([q1, B], Y, R)
+     5. δ([q1, B], b) = ([q2, B], Y, L)
+     6. δ([q2, B], a) = ([q2, B], a, L)
+     7. δ([q2, B], Y) = ([q2, B], Y, L)
+     8. δ([q2, B], X) = ([q0, B], X, R)
+     9. δ([q3, B], Y) = ([q3, B], Y, R)
+    10. δ([q3, B], B) = ([q4, B], B, R)
+Cadenas: 4 · límite de pasos por cadena: 10000
+
+=== Cadena 1 de 4: 'aaabbb' (longitud 6) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q4'
+Pasos:         25
+Estado final:  q4
+Caché final:   B
+Cabezal final: 7
+Cinta final:   XXXYYY
+ID final:      XXXYYYB[q4,B]B
+
+posición 0 1 2 3 4 5 6 7
+cinta    X X X Y Y Y B B
+cabezal                ^
+
+Descripciones instantáneas (ID_0 a ID_25):
+  Paso  ID              Transición aplicada
+     0  [q0,B]aaabbb    —
+     1  X[q1,B]aabbb    δ([q0, B], a) = ([q1, B], X, R)
+     2  Xa[q1,B]abbb    δ([q1, B], a) = ([q1, B], a, R)
+     3  Xaa[q1,B]bbb    δ([q1, B], a) = ([q1, B], a, R)
+     4  Xa[q2,B]aYbb    δ([q1, B], b) = ([q2, B], Y, L)
+     5  X[q2,B]aaYbb    δ([q2, B], a) = ([q2, B], a, L)
+     6  [q2,B]XaaYbb    δ([q2, B], a) = ([q2, B], a, L)
+     7  X[q0,B]aaYbb    δ([q2, B], X) = ([q0, B], X, R)
+     8  XX[q1,B]aYbb    δ([q0, B], a) = ([q1, B], X, R)
+     9  XXa[q1,B]Ybb    δ([q1, B], a) = ([q1, B], a, R)
+    10  XXaY[q1,B]bb    δ([q1, B], Y) = ([q1, B], Y, R)
+    11  XXa[q2,B]YYb    δ([q1, B], b) = ([q2, B], Y, L)
+    12  XX[q2,B]aYYb    δ([q2, B], Y) = ([q2, B], Y, L)
+    13  X[q2,B]XaYYb    δ([q2, B], a) = ([q2, B], a, L)
+    14  XX[q0,B]aYYb    δ([q2, B], X) = ([q0, B], X, R)
+    15  XXX[q1,B]YYb    δ([q0, B], a) = ([q1, B], X, R)
+    16  XXXY[q1,B]Yb    δ([q1, B], Y) = ([q1, B], Y, R)
+    17  XXXYY[q1,B]b    δ([q1, B], Y) = ([q1, B], Y, R)
+    18  XXXY[q2,B]YY    δ([q1, B], b) = ([q2, B], Y, L)
+    19  XXX[q2,B]YYY    δ([q2, B], Y) = ([q2, B], Y, L)
+    20  XX[q2,B]XYYY    δ([q2, B], Y) = ([q2, B], Y, L)
+    21  XXX[q0,B]YYY    δ([q2, B], X) = ([q0, B], X, R)
+    22  XXXY[q3,B]YY    δ([q0, B], Y) = ([q3, B], Y, R)
+    23  XXXYY[q3,B]Y    δ([q3, B], Y) = ([q3, B], Y, R)
+    24  XXXYYY[q3,B]B   δ([q3, B], Y) = ([q3, B], Y, R)
+    25  XXXYYYB[q4,B]B  δ([q3, B], B) = ([q4, B], B, R)
+
+=== Cadena 2 de 4: 'aaaabbbb' (longitud 8) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q4'
+Pasos:         41
+Estado final:  q4
+Caché final:   B
+Cabezal final: 9
+Cinta final:   XXXXYYYY
+ID final:      XXXXYYYYB[q4,B]B
+
+posición 0 1 2 3 4 5 6 7 8 9
+cinta    X X X X Y Y Y Y B B
+cabezal                    ^
+
+Descripciones instantáneas (ID_0 a ID_41):
+  Paso  ID                Transición aplicada
+     0  [q0,B]aaaabbbb    —
+     1  X[q1,B]aaabbbb    δ([q0, B], a) = ([q1, B], X, R)
+     2  Xa[q1,B]aabbbb    δ([q1, B], a) = ([q1, B], a, R)
+     3  Xaa[q1,B]abbbb    δ([q1, B], a) = ([q1, B], a, R)
+     4  Xaaa[q1,B]bbbb    δ([q1, B], a) = ([q1, B], a, R)
+     5  Xaa[q2,B]aYbbb    δ([q1, B], b) = ([q2, B], Y, L)
+     6  Xa[q2,B]aaYbbb    δ([q2, B], a) = ([q2, B], a, L)
+     7  X[q2,B]aaaYbbb    δ([q2, B], a) = ([q2, B], a, L)
+     8  [q2,B]XaaaYbbb    δ([q2, B], a) = ([q2, B], a, L)
+     9  X[q0,B]aaaYbbb    δ([q2, B], X) = ([q0, B], X, R)
+    10  XX[q1,B]aaYbbb    δ([q0, B], a) = ([q1, B], X, R)
+    11  XXa[q1,B]aYbbb    δ([q1, B], a) = ([q1, B], a, R)
+    12  XXaa[q1,B]Ybbb    δ([q1, B], a) = ([q1, B], a, R)
+    13  XXaaY[q1,B]bbb    δ([q1, B], Y) = ([q1, B], Y, R)
+    14  XXaa[q2,B]YYbb    δ([q1, B], b) = ([q2, B], Y, L)
+    15  XXa[q2,B]aYYbb    δ([q2, B], Y) = ([q2, B], Y, L)
+    16  XX[q2,B]aaYYbb    δ([q2, B], a) = ([q2, B], a, L)
+    17  X[q2,B]XaaYYbb    δ([q2, B], a) = ([q2, B], a, L)
+    18  XX[q0,B]aaYYbb    δ([q2, B], X) = ([q0, B], X, R)
+    19  XXX[q1,B]aYYbb    δ([q0, B], a) = ([q1, B], X, R)
+    20  XXXa[q1,B]YYbb    δ([q1, B], a) = ([q1, B], a, R)
+    21  XXXaY[q1,B]Ybb    δ([q1, B], Y) = ([q1, B], Y, R)
+    22  XXXaYY[q1,B]bb    δ([q1, B], Y) = ([q1, B], Y, R)
+    23  XXXaY[q2,B]YYb    δ([q1, B], b) = ([q2, B], Y, L)
+    24  XXXa[q2,B]YYYb    δ([q2, B], Y) = ([q2, B], Y, L)
+    25  XXX[q2,B]aYYYb    δ([q2, B], Y) = ([q2, B], Y, L)
+    26  XX[q2,B]XaYYYb    δ([q2, B], a) = ([q2, B], a, L)
+    27  XXX[q0,B]aYYYb    δ([q2, B], X) = ([q0, B], X, R)
+    28  XXXX[q1,B]YYYb    δ([q0, B], a) = ([q1, B], X, R)
+    29  XXXXY[q1,B]YYb    δ([q1, B], Y) = ([q1, B], Y, R)
+    30  XXXXYY[q1,B]Yb    δ([q1, B], Y) = ([q1, B], Y, R)
+    31  XXXXYYY[q1,B]b    δ([q1, B], Y) = ([q1, B], Y, R)
+    32  XXXXYY[q2,B]YY    δ([q1, B], b) = ([q2, B], Y, L)
+    33  XXXXY[q2,B]YYY    δ([q2, B], Y) = ([q2, B], Y, L)
+    34  XXXX[q2,B]YYYY    δ([q2, B], Y) = ([q2, B], Y, L)
+    35  XXX[q2,B]XYYYY    δ([q2, B], Y) = ([q2, B], Y, L)
+    36  XXXX[q0,B]YYYY    δ([q2, B], X) = ([q0, B], X, R)
+    37  XXXXY[q3,B]YYY    δ([q0, B], Y) = ([q3, B], Y, R)
+    38  XXXXYY[q3,B]YY    δ([q3, B], Y) = ([q3, B], Y, R)
+    39  XXXXYYY[q3,B]Y    δ([q3, B], Y) = ([q3, B], Y, R)
+    40  XXXXYYYY[q3,B]B   δ([q3, B], Y) = ([q3, B], Y, R)
+    41  XXXXYYYYB[q4,B]B  δ([q3, B], B) = ([q4, B], B, R)
+
+=== Cadena 3 de 4: 'aaabb' (longitud 5) ===
+Resultado:     REJECTED (rechazada)
+Motivo:        no hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final
+Pasos:         17
+Estado final:  q1
+Caché final:   B
+Cabezal final: 5
+Cinta final:   XXXYY
+ID final:      XXXYY[q1,B]B
+
+posición 0 1 2 3 4 5
+cinta    X X X Y Y B
+cabezal            ^
+
+Descripciones instantáneas (ID_0 a ID_17):
+  Paso  ID            Transición aplicada
+     0  [q0,B]aaabb   —
+     1  X[q1,B]aabb   δ([q0, B], a) = ([q1, B], X, R)
+     2  Xa[q1,B]abb   δ([q1, B], a) = ([q1, B], a, R)
+     3  Xaa[q1,B]bb   δ([q1, B], a) = ([q1, B], a, R)
+     4  Xa[q2,B]aYb   δ([q1, B], b) = ([q2, B], Y, L)
+     5  X[q2,B]aaYb   δ([q2, B], a) = ([q2, B], a, L)
+     6  [q2,B]XaaYb   δ([q2, B], a) = ([q2, B], a, L)
+     7  X[q0,B]aaYb   δ([q2, B], X) = ([q0, B], X, R)
+     8  XX[q1,B]aYb   δ([q0, B], a) = ([q1, B], X, R)
+     9  XXa[q1,B]Yb   δ([q1, B], a) = ([q1, B], a, R)
+    10  XXaY[q1,B]b   δ([q1, B], Y) = ([q1, B], Y, R)
+    11  XXa[q2,B]YY   δ([q1, B], b) = ([q2, B], Y, L)
+    12  XX[q2,B]aYY   δ([q2, B], Y) = ([q2, B], Y, L)
+    13  X[q2,B]XaYY   δ([q2, B], a) = ([q2, B], a, L)
+    14  XX[q0,B]aYY   δ([q2, B], X) = ([q0, B], X, R)
+    15  XXX[q1,B]YY   δ([q0, B], a) = ([q1, B], X, R)
+    16  XXXY[q1,B]Y   δ([q1, B], Y) = ([q1, B], Y, R)
+    17  XXXYY[q1,B]B  δ([q1, B], Y) = ([q1, B], Y, R)
+
+=== Cadena 4 de 4: 'aabbbb' (longitud 6) ===
+Resultado:     REJECTED (rechazada)
+Motivo:        no hay regla para el estado 'q3' con caché el blanco leyendo 'b', y 'q3' no es final
+Pasos:         12
+Estado final:  q3
+Caché final:   B
+Cabezal final: 4
+Cinta final:   XXYYbb
+ID final:      XXYY[q3,B]bb
+
+posición 0 1 2 3 4 5
+cinta    X X Y Y b b
+cabezal          ^
+
+Descripciones instantáneas (ID_0 a ID_12):
+  Paso  ID            Transición aplicada
+     0  [q0,B]aabbbb  —
+     1  X[q1,B]abbbb  δ([q0, B], a) = ([q1, B], X, R)
+     2  Xa[q1,B]bbbb  δ([q1, B], a) = ([q1, B], a, R)
+     3  X[q2,B]aYbbb  δ([q1, B], b) = ([q2, B], Y, L)
+     4  [q2,B]XaYbbb  δ([q2, B], a) = ([q2, B], a, L)
+     5  X[q0,B]aYbbb  δ([q2, B], X) = ([q0, B], X, R)
+     6  XX[q1,B]Ybbb  δ([q0, B], a) = ([q1, B], X, R)
+     7  XXY[q1,B]bbb  δ([q1, B], Y) = ([q1, B], Y, R)
+     8  XX[q2,B]YYbb  δ([q1, B], b) = ([q2, B], Y, L)
+     9  X[q2,B]XYYbb  δ([q2, B], Y) = ([q2, B], Y, L)
+    10  XX[q0,B]YYbb  δ([q2, B], X) = ([q0, B], X, R)
+    11  XXY[q3,B]Ybb  δ([q0, B], Y) = ([q3, B], Y, R)
+    12  XXYY[q3,B]bb  δ([q3, B], Y) = ([q3, B], Y, R)
+
+=== Resumen ===
+#  Cadena    Longitud  Resultado  Pasos  Cinta final
+1  aaabbb    6         ACCEPTED   25     XXXYYY
+2  aaaabbbb  8         ACCEPTED   41     XXXXYYYY
+3  aaabb     5         REJECTED   17     XXXYY
+4  aabbbb    6         REJECTED   12     XXYYbb

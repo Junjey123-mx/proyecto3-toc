@@ -1,0 +1,130 @@
+Máquina: machines/transformer_binary_increment.yaml
+  Q  = {q0, q1, q2}
+  Σ  = {0, 1}
+  Γ  = {0, 1, B}
+  q0 = q0
+  F  = {q2}
+  B  = B (blanco)
+  δ  = 6 reglas, en el orden del YAML:
+    1. δ([q0, B], 0) = ([q0, B], 0, R)
+    2. δ([q0, B], 1) = ([q0, B], 1, R)
+    3. δ([q0, B], B) = ([q1, 1], B, L)
+    4. δ([q1, 1], 1) = ([q1, 1], 0, L)
+    5. δ([q1, 1], 0) = ([q2, B], 1, S)
+    6. δ([q1, 1], B) = ([q2, B], 1, S)
+Cadenas: 4 · límite de pasos por cadena: 10000
+
+=== Cadena 1 de 4: '10101' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q2'
+Pasos:         8
+Estado final:  q2
+Caché final:   B
+Cabezal final: 3
+Cinta final:   10110
+ID final:      101[q2,B]10
+
+posición 0 1 2 3 4
+cinta    1 0 1 1 0
+cabezal        ^
+
+Descripciones instantáneas (ID_0 a ID_8):
+  Paso  ID            Transición aplicada
+     0  [q0,B]10101   —
+     1  1[q0,B]0101   δ([q0, B], 1) = ([q0, B], 1, R)
+     2  10[q0,B]101   δ([q0, B], 0) = ([q0, B], 0, R)
+     3  101[q0,B]01   δ([q0, B], 1) = ([q0, B], 1, R)
+     4  1010[q0,B]1   δ([q0, B], 0) = ([q0, B], 0, R)
+     5  10101[q0,B]B  δ([q0, B], 1) = ([q0, B], 1, R)
+     6  1010[q1,1]1   δ([q0, B], B) = ([q1, 1], B, L)
+     7  101[q1,1]00   δ([q1, 1], 1) = ([q1, 1], 0, L)
+     8  101[q2,B]10   δ([q1, 1], 0) = ([q2, B], 1, S)
+
+=== Cadena 2 de 4: '11011' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q2'
+Pasos:         9
+Estado final:  q2
+Caché final:   B
+Cabezal final: 2
+Cinta final:   11100
+ID final:      11[q2,B]100
+
+posición 0 1 2 3 4
+cinta    1 1 1 0 0
+cabezal      ^
+
+Descripciones instantáneas (ID_0 a ID_9):
+  Paso  ID            Transición aplicada
+     0  [q0,B]11011   —
+     1  1[q0,B]1011   δ([q0, B], 1) = ([q0, B], 1, R)
+     2  11[q0,B]011   δ([q0, B], 1) = ([q0, B], 1, R)
+     3  110[q0,B]11   δ([q0, B], 0) = ([q0, B], 0, R)
+     4  1101[q0,B]1   δ([q0, B], 1) = ([q0, B], 1, R)
+     5  11011[q0,B]B  δ([q0, B], 1) = ([q0, B], 1, R)
+     6  1101[q1,1]1   δ([q0, B], B) = ([q1, 1], B, L)
+     7  110[q1,1]10   δ([q1, 1], 1) = ([q1, 1], 0, L)
+     8  11[q1,1]000   δ([q1, 1], 1) = ([q1, 1], 0, L)
+     9  11[q2,B]100   δ([q1, 1], 0) = ([q2, B], 1, S)
+
+=== Cadena 3 de 4: '11111' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q2'
+Pasos:         12
+Estado final:  q2
+Caché final:   B
+Cabezal final: -1
+Cinta final:   100000
+ID final:      [q2,B]100000
+
+posición -1  0  1  2  3  4
+cinta     1  0  0  0  0  0
+cabezal   ^
+
+Descripciones instantáneas (ID_0 a ID_12):
+  Paso  ID            Transición aplicada
+     0  [q0,B]11111   —
+     1  1[q0,B]1111   δ([q0, B], 1) = ([q0, B], 1, R)
+     2  11[q0,B]111   δ([q0, B], 1) = ([q0, B], 1, R)
+     3  111[q0,B]11   δ([q0, B], 1) = ([q0, B], 1, R)
+     4  1111[q0,B]1   δ([q0, B], 1) = ([q0, B], 1, R)
+     5  11111[q0,B]B  δ([q0, B], 1) = ([q0, B], 1, R)
+     6  1111[q1,1]1   δ([q0, B], B) = ([q1, 1], B, L)
+     7  111[q1,1]10   δ([q1, 1], 1) = ([q1, 1], 0, L)
+     8  11[q1,1]100   δ([q1, 1], 1) = ([q1, 1], 0, L)
+     9  1[q1,1]1000   δ([q1, 1], 1) = ([q1, 1], 0, L)
+    10  [q1,1]10000   δ([q1, 1], 1) = ([q1, 1], 0, L)
+    11  [q1,1]B00000  δ([q1, 1], 1) = ([q1, 1], 0, L)
+    12  [q2,B]100000  δ([q1, 1], B) = ([q2, B], 1, S)
+
+=== Cadena 4 de 4: '10000' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q2'
+Pasos:         7
+Estado final:  q2
+Caché final:   B
+Cabezal final: 4
+Cinta final:   10001
+ID final:      1000[q2,B]1
+
+posición 0 1 2 3 4
+cinta    1 0 0 0 1
+cabezal          ^
+
+Descripciones instantáneas (ID_0 a ID_7):
+  Paso  ID            Transición aplicada
+     0  [q0,B]10000   —
+     1  1[q0,B]0000   δ([q0, B], 1) = ([q0, B], 1, R)
+     2  10[q0,B]000   δ([q0, B], 0) = ([q0, B], 0, R)
+     3  100[q0,B]00   δ([q0, B], 0) = ([q0, B], 0, R)
+     4  1000[q0,B]0   δ([q0, B], 0) = ([q0, B], 0, R)
+     5  10000[q0,B]B  δ([q0, B], 0) = ([q0, B], 0, R)
+     6  1000[q1,1]0   δ([q0, B], B) = ([q1, 1], B, L)
+     7  1000[q2,B]1   δ([q1, 1], 0) = ([q2, B], 1, S)
+
+=== Resumen ===
+#  Cadena  Longitud  Resultado  Pasos  Cinta final
+1  10101   5         ACCEPTED   8      10110
+2  11011   5         ACCEPTED   9      11100
+3  11111   5         ACCEPTED   12     100000
+4  10000   5         ACCEPTED   7      10001

@@ -284,3 +284,13 @@ def test_input_errors_are_reported_with_their_location_and_never_simulated(tmp_p
     assert (code, out) == (1, "")
     assert err.startswith("error: ") and fragment in err
     assert not any(word in err for word in ("ACCEPTED", "REJECTED", "LIMIT_EXCEEDED"))
+
+
+# --- Evidencia de la demostración ------------------------------------------------------------
+
+@pytest.mark.parametrize("name", ["recognizer_anbn", "transformer_binary_increment"])
+def test_demonstration_evidence_matches_the_current_output(name):
+    """``docs/evidence/`` guarda la salida real de las dos demostraciones; debe seguir siendo exacta."""
+    code, out, err = run_cli(ROOT, f"machines/{name}.yaml")
+    assert (code, err) == (0, "")
+    assert out.replace("\r\n", "\n") == (ROOT / "docs" / "evidence" / f"{name}.txt").read_text(encoding="utf-8")

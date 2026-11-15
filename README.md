@@ -12,7 +12,7 @@ Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripc
 
 ## Video explicativo
 
-**Estado:** pendiente de grabación y publicación. El enlace no listado de YouTube se agregará en esta sección cuando el video exista.
+**Estado:** pendiente de grabación y publicación. El enlace no listado de YouTube se agregará en esta sección cuando el video exista. El guion, los comandos y la evidencia de la demostración están en [§22](#22-demostración-y-video).
 
 ---
 
@@ -39,8 +39,9 @@ Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripc
 19. [Discusión](#19-discusión)
 20. [Limitaciones y alcance](#20-limitaciones-y-alcance)
 21. [Organización del proyecto](#21-organización-del-proyecto)
-22. [Desarrollo y autoría](#22-desarrollo-y-autoría)
-23. [Referencias bibliográficas](#23-referencias-bibliográficas)
+22. [Demostración y video](#22-demostración-y-video)
+23. [Desarrollo y autoría](#23-desarrollo-y-autoría)
+24. [Referencias bibliográficas](#24-referencias-bibliográficas)
 
 ---
 
@@ -84,7 +85,7 @@ Ninguna parte del código de Python conoce las máquinas de la demostración: la
 | MT reconocedora: 2 aceptadas y 2 rechazadas de longitud ≥ 5 | L = {aⁿbⁿ \| n ≥ 1}: `aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas | [§10](#10-máquina-reconocedora) |
 | MT alteradora: 4 cadenas de longitud ≥ 5, sin dejar todo en blanco | Incremento binario: `10101`, `11011`, `11111`, `10000` | [§11](#11-máquina-alteradora) |
 | Proporcionar las funciones de transición | Tablas δ en este README y en la cabecera de la salida del programa | [§10.4](#104-tabla-de-transiciones), [§11.5](#115-tabla-de-transiciones) |
-| Video no listado con las ejecuciones y la arquitectura | Pendiente; ver [Video explicativo](#video-explicativo) | — |
+| Video no listado con las ejecuciones y la arquitectura | Pendiente; guion preparado | [§22](#22-demostración-y-video) |
 | Repositorio privado y README en la raíz | Repositorio privado en GitHub; este archivo | — |
 
 **Decisiones propias (no exigidas por el enunciado).** El resultado `LIMIT_EXCEEDED` y la opción `--max-steps`, los estados finales terminales, la exigencia de símbolos de un solo carácter, el rechazo de claves YAML repetidas y la notación exacta de la cinta y del blanco. Se explican en [§7.4](#74-decisiones-adoptadas), [§8](#8-motor-de-simulación-y-condiciones-de-parada) y [§13](#13-decisiones-de-implementación-en-python).
@@ -624,7 +625,7 @@ Si el equipo decide reforzar este rubro, la alternativa es agregar una máquina 
 python -m pytest -q
 ```
 
-Resultado de la ejecución final en Fedora 43 con Python 3.14.6: **347 pruebas aprobadas, 0 fallidas, 0 omitidas**. La misma cifra se obtuvo en un entorno virtual nuevo instalado solo con `requirements.txt` a partir de `git archive`.
+Resultado de la ejecución final en Fedora 43 con Python 3.14.6: **349 pruebas aprobadas, 0 fallidas, 0 omitidas**. La misma cifra se obtuvo en un entorno virtual nuevo instalado solo con `requirements.txt` a partir de `git archive`.
 
 | Archivo | Pruebas | Contenido |
 |---|---:|---|
@@ -643,7 +644,7 @@ Resultado de la ejecución final en Fedora 43 con Python 3.14.6: **347 pruebas a
 | `test_cli.py` | 30 | Argumentos, errores, tabla δ en la cabecera, salida de ambas máquinas |
 | `test_recognizer.py` | 37 | Demostración, recorridos a mano, fórmula de pasos, exhaustiva ≤ 10 |
 | `test_transformer.py` | 25 | Demostración, desbordamiento en −1, caché, exhaustiva 1–10 |
-| `test_integration.py` | 33 | Extremo a extremo por proceso aparte, oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada |
+| `test_integration.py` | 35 | Extremo a extremo por proceso aparte, oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada, evidencia de `docs/evidence/` |
 
 ## 16. Instalación y ejecución
 
@@ -810,13 +811,49 @@ proyecto3-toc/
 │   └── utils/notation.py          blanco, tupla de control y reglas de δ
 ├── tests/                         16 archivos de pruebas y fixtures/statement_example_mt_1.yaml
 └── docs/
+    ├── evidence/                  salida real de las dos demostraciones (§22.1)
     ├── handoff_gate_01_derek.md   entrega del Gate 01 al Gate 02
     └── handoff_gate_02_vernel.md  entrega del Gate 02 al Gate 03
 ```
 
-Cada módulo incluye docstrings con su propósito y la propiedad formal que implementa. Los documentos de `docs/` son registros de las entregas entre integrantes; el contenido técnico que antes estaba en `docs/architecture.md`, `docs/methodology.md` y `docs/test_cases.md` está integrado en este README.
+Cada módulo incluye docstrings con su propósito y la propiedad formal que implementa. Los traspasos de `docs/` son registros de las entregas entre integrantes; el contenido técnico que antes estaba en `docs/architecture.md`, `docs/methodology.md` y `docs/test_cases.md` está integrado en este README.
 
-## 22. Desarrollo y autoría
+## 22. Demostración y video
+
+### 22.1 Evidencia en el repositorio
+
+`docs/evidence/recognizer_anbn.txt` y `docs/evidence/transformer_binary_increment.txt` contienen la salida completa y real de los dos comandos de la demostración: la cabecera con la tabla δ, las cuatro cadenas con todas sus IDs y el resumen. `tests/test_integration.py` vuelve a ejecutar la CLI y comprueba que coincidan carácter por carácter, así que no pueden quedar desactualizados. Para regenerarlos, desde la raíz:
+
+```bash
+python main.py --machine machines/recognizer_anbn.yaml > docs/evidence/recognizer_anbn.txt
+python main.py --machine machines/transformer_binary_increment.yaml > docs/evidence/transformer_binary_increment.txt
+```
+
+### 22.2 Guion del video
+
+| Parte | Qué mostrar | Material | Rubro |
+|---|---|---|---|
+| 1. Presentación | Proyecto, integrantes y objetivo: simulador de MT de una cinta configurado con YAML | [§1](#1-objetivo-del-proyecto) | — |
+| 2. Arquitectura | `main.py` → entrada → modelo → simulador → traza → salida; cinta dispersa, IDs inmutables, traza verificada | [§5](#5-arquitectura), [§6](#6-modelo-de-datos), [§8](#8-motor-de-simulación-y-condiciones-de-parada) | Arquitectura (1) |
+| 3. Contrato YAML | Claves del enunciado, `mem_cache_value` dentro de [q, c], blanco = entrada vacía | [§7](#7-contrato-yaml) | — |
+| 4. Reconocedora | Tabla δ completa (cabecera de la salida) y estrategia de marcar, buscar y regresar | [§10](#10-máquina-reconocedora) | Dificultad (3) |
+| 5. Ejecución | `aaabbb` y `aaaabbbb` aceptadas; `aaabb` y `aabbbb` rechazadas, con su longitud, sus IDs y el motivo | [§17](#17-resultados-de-la-demostración) | Aceptadas (2), rechazadas (2) |
+| 6. Alteradora | Tabla δ, acarreo en la caché y desbordamiento a la posición −1 | [§11](#11-máquina-alteradora) | Dificultad (3) |
+| 7. Ejecución | `10101 → 10110`, `11011 → 11100`, `11111 → 100000`, `10000 → 10001`; la cinta final nunca queda en blanco | [§17](#17-resultados-de-la-demostración), [§18](#18-ejemplo-completo) | Cuatro cadenas (4) |
+| 8. Motor único | Las dos máquinas son solo YAML; el código de Python no conoce ninguna | [§5](#5-arquitectura) | Arquitectura (1) |
+| 9. Verificación y límites | `python -m pytest -q`, oráculos y limitaciones reales | [§14](#14-estrategia-de-validación), [§20](#20-limitaciones-y-alcance) | — |
+
+Comandos de la grabación, verificados en Fedora:
+
+```bash
+python -m pytest -q
+python main.py --machine machines/recognizer_anbn.yaml
+python main.py --machine machines/transformer_binary_increment.yaml
+```
+
+Ninguna cadena necesita editarse en vivo: los dos archivos YAML ya contienen en `simulation_strings` exactamente las cuatro cadenas de cada demostración, todas de longitud ≥ 5.
+
+## 23. Desarrollo y autoría
 
 El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull requests, en tres etapas consecutivas (Gates). Cada integrante publicó solo durante su etapa y entregó a la siguiente el SHA final, los resultados de las pruebas y las interfaces públicas.
 
@@ -826,7 +863,7 @@ El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull reques
 | 02 | Derek | C10–C22, 1 corrección y el traspaso | Traza, formateadores de IDs, cinta y resultados, CLI, las dos máquinas, sus pruebas y su documentación |
 | 03 | Vernel | C23–C26 | Pruebas de integración, observaciones del Gate 02, este README y la evidencia de entrega |
 
-## 23. Referencias bibliográficas
+## 24. Referencias bibliográficas
 
 ### Enunciado del curso (fuente normativa)
 
