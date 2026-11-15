@@ -1,5 +1,10 @@
 # Entrega del Gate 02 al Gate 03
 
+> **Nota posterior (Gate 03, C25):** el contenido de `docs/architecture.md`,
+> `docs/methodology.md` y `docs/test_cases.md` se integró en el `README.md`.
+> Las rutas citadas en este registro corresponden a la fecha de la entrega y
+> se pueden consultar en el historial, p. ej. `git show 78d73b5:docs/test_cases.md`.
+
 **De:** Derek (C10–C22) · **Para:** Vernel (C23–C26) · **Rama:** `main`
 
 ## 1. Estado entregado

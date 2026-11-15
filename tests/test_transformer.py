@@ -2,7 +2,7 @@
 
 La máquina se carga desde ``machines/transformer_binary_increment.yaml`` y la
 ejecuta el motor genérico. Los valores esperados vienen de la definición de f y
-del análisis de ``docs/test_cases.md`` (sección 2). La salida es el contenido de
+del análisis de ``README.md`` (sección 11). La salida es el contenido de
 la cinta desde la primera hasta la última celda no blanca (``tape_contents``).
 """
 
@@ -50,7 +50,7 @@ def increment(word):
 
 
 def expected_steps(word):
-    """T(w) = |w| + t + 2, con t = unos al final de w (docs/test_cases.md, §2.6)."""
+    """T(w) = |w| + t + 2, con t = unos al final de w (README.md, §11.6)."""
     return len(word) + (len(word) - len(word.rstrip("1"))) + 2
 
 
@@ -97,7 +97,7 @@ def test_overflow_writes_the_new_bit_at_a_negative_position(machine):
 
 
 def test_hand_trace_of_11111(machine):
-    """docs/test_cases.md, §2.7, con el número de regla aplicada."""
+    """README.md, §11.7, con el número de regla aplicada."""
     trace = run(machine, "11111")
     expected = [
         ("[q0,B]11111", None), ("1[q0,B]1111", 2), ("11[q0,B]111", 2), ("111[q0,B]11", 2),
@@ -113,7 +113,7 @@ def test_hand_trace_of_11111(machine):
 
 
 def test_hand_trace_of_10101(machine):
-    """docs/test_cases.md, §2.8."""
+    """README.md, §11.8."""
     assert [format_id(e, 5) for e in run(machine, "10101").entries] == [
         "[q0,B]10101", "1[q0,B]0101", "10[q0,B]101", "101[q0,B]01", "1010[q0,B]1",
         "10101[q0,B]B", "1010[q1,1]1", "101[q1,1]00", "101[q2,B]10",

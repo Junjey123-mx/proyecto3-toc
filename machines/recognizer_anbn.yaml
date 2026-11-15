@@ -1,6 +1,6 @@
 ---
 # Máquina reconocedora: L = {a^n b^n | n >= 1}.
-# Diseño formal, tabla de transiciones y corrección en docs/test_cases.md (sección 1).
+# Diseño formal, tabla de transiciones y corrección en README.md (sección 10).
 # Cada ronda marca la a más a la izquierda con X y la primera b sin emparejar con Y;
 # cuando ya no quedan a, comprueba que solo haya Y hasta el primer blanco.
 # La caché no se utiliza: vale blanco en todas las reglas.

@@ -1,6 +1,6 @@
 ---
 # Máquina alteradora: incremento binario, f(w) = bin(value2(w) + 1).
-# Diseño formal, tabla de transiciones y recorridos en docs/test_cases.md (sección 2).
+# Diseño formal, tabla de transiciones y recorridos en README.md (sección 11).
 # Recorre el número hasta el final, carga el acarreo en la caché y lo propaga de derecha
 # a izquierda; se detiene al reemplazar el primer 0 o, si todos los bits son 1, agrega
 # un 1 a la izquierda (posición -1), sin perder el acarreo: 11111 -> 100000.

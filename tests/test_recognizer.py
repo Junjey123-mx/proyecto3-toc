@@ -2,7 +2,7 @@
 
 La máquina se carga desde ``machines/recognizer_anbn.yaml`` y la ejecuta el
 motor genérico; los valores esperados provienen del análisis de
-``docs/test_cases.md`` (sección 1), no de otra implementación del lenguaje.
+``README.md`` (sección 10), no de otra implementación del lenguaje.
 """
 
 from itertools import product
@@ -39,7 +39,7 @@ def run(machine, word, **kwargs):
 
 
 def accepted_steps(n):
-    """T(n) = 2n² + 2n + 1 (docs/test_cases.md, §1.5)."""
+    """T(n) = 2n² + 2n + 1 (README.md, §10.5)."""
     return 2 * n * n + 2 * n + 1
 
 
@@ -95,7 +95,7 @@ def test_rejections_are_justified_by_a_missing_rule(machine, word, reason):
 
 
 def test_hand_trace_of_aabb(machine):
-    """Recorrido a mano de docs/test_cases.md, §1.6, con la regla aplicada en cada paso."""
+    """Recorrido a mano de README.md, §10.6, con la regla aplicada en cada paso."""
     trace = run(machine, "aabb")
     expected = [
         ("[q0,B]aabb", None), ("X[q1,B]abb", 1), ("Xa[q1,B]bb", 3), ("X[q2,B]aYb", 5),

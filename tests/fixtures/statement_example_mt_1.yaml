@@ -1,6 +1,6 @@
 ---
 # Transcripción literal de example_mt_1.yaml (enunciado del Proyecto No. 3, p. 3).
-# El enunciado lo declara incompleto; ver docs/architecture.md §4.5.
+# El enunciado lo declara incompleto; ver README.md §7.6.
 q_states:
   q_list:
   - '0'
