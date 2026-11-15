@@ -41,6 +41,30 @@ def test_prints_the_formal_description_of_the_machine(capsys):
     assert "  δ  = 20 reglas" in out
 
 
+def test_header_lists_every_rule_of_delta_in_yaml_order(capsys):
+    """Observación L-1 del Gate 02: la tabla δ completa es visible en la salida, no solo su tamaño."""
+    _, out, _ = run_cli(capsys, "--machine", ROOT / "machines" / "transformer_binary_increment.yaml")
+    lines = out.splitlines()
+    start = lines.index("  δ  = 6 reglas, en el orden del YAML:")
+    assert lines[start + 1:start + 8] == [
+        "    1. δ([q0, B], 0) = ([q0, B], 0, R)",
+        "    2. δ([q0, B], 1) = ([q0, B], 1, R)",
+        "    3. δ([q0, B], B) = ([q1, 1], B, L)",
+        "    4. δ([q1, 1], 1) = ([q1, 1], 0, L)",
+        "    5. δ([q1, 1], 0) = ([q2, B], 1, S)",
+        "    6. δ([q1, 1], B) = ([q2, B], 1, S)",
+        "Cadenas: 4 · límite de pasos por cadena: 10000",
+    ]
+
+
+def test_header_numbers_all_rules_with_aligned_indices(capsys):
+    _, out, _ = run_cli(capsys, "--machine", LAB10)
+    listed = [line for line in out.splitlines() if line.startswith("  ") and ". δ(" in line]
+    assert len(listed) == 20
+    assert listed[0] == "     1. δ([0, B], a) = ([1, a], B, R)"
+    assert listed[-1].startswith("    20. δ(")
+
+
 def test_help_describes_the_options(capsys):
     with pytest.raises(SystemExit) as exit_info:
         main.main(["--help"])
@@ -236,6 +260,7 @@ def test_symbol_b_switches_the_blank_glyph(capsys, tmp_path):
     path = write_machine(tmp_path, tape="[a, B, null]", rules=[rule])
     _, out, _ = run_cli(capsys, "--machine", path)
     assert "  B  = □ (blanco)" in out
+    assert "    1. δ([s, □], a) = ([f, □], B, R)" in out
     assert "ID final:      B[f,□]□" in out
 
 

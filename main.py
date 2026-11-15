@@ -4,9 +4,9 @@ Uso:
     python main.py --machine machines/<archivo>.yaml [--max-steps N]
 
 Lee la máquina y su lista ``simulation_strings``, simula cada cadena en orden y
-escribe en la salida estándar el reporte de cada una (veredicto, cinta final y
-todas las IDs) seguido de un resumen. Los errores del archivo se escriben en la
-salida de errores.
+escribe en la salida estándar la descripción formal de la máquina (con la tabla δ
+completa), el reporte de cada cadena (veredicto, cinta final y todas las IDs) y
+un resumen. Los errores del archivo se escriben en la salida de errores.
 
 Códigos de salida: 0 si todas las cadenas se simularon (aceptadas, rechazadas o
 detenidas por el límite de pasos), 1 si el archivo no se pudo cargar o la
@@ -27,7 +27,7 @@ from src.model.turing_machine import TuringMachine
 from src.output.result_formatter import format_result, format_summary
 from src.simulator.engine import DEFAULT_MAX_STEPS, simulate
 from src.simulator.trace import build_trace
-from src.utils.notation import blank_glyph, show_symbol
+from src.utils.notation import blank_glyph, format_rule, show_symbol
 
 EXIT_OK = 0
 EXIT_INPUT_ERROR = 1
@@ -65,12 +65,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def describe_machine(machine: TuringMachine, blank: str) -> list[str]:
-    """Resumen formal M = (Q, Σ, Γ, δ, q0, B, F) de la máquina cargada."""
+    """Resumen formal M = (Q, Σ, Γ, δ, q0, B, F) con la tabla δ completa, en el orden del YAML."""
 
     def symbols(values: frozenset) -> str:
         ordered = sorted(values, key=lambda s: (s is BLANK, s or ""))
         return "{" + ", ".join(show_symbol(s, blank) for s in ordered) + "}"
 
+    width = len(str(len(machine.transitions)))
     return [
         f"Q  = {{{', '.join(sorted(machine.states))}}}",
         f"Σ  = {symbols(machine.input_alphabet)}",
@@ -78,7 +79,8 @@ def describe_machine(machine: TuringMachine, blank: str) -> list[str]:
         f"q0 = {machine.initial_state}",
         f"F  = {{{', '.join(sorted(machine.final_states))}}}",
         f"B  = {blank} (blanco)",
-        f"δ  = {len(machine.transitions)} reglas",
+        f"δ  = {len(machine.transitions)} reglas" + (", en el orden del YAML:" if machine.transitions else ""),
+        *(f"  {number:>{width}}. {format_rule(rule, blank)}" for number, rule in enumerate(machine.transitions, start=1)),
     ]
 
 

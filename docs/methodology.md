@@ -142,7 +142,7 @@ Se usa la notación del Laboratorio 10, X1…Xi-1 [q,c] Xi…Xn: la tupla de con
 |---|---|---|
 | Tupla de control en una ID | `[q,c]`, sin espacio | `Bab[q3,B]#Xab` |
 | Regla de δ | Notación del enunciado | `δ([q0, B], a) = ([q1, a], B, R)` |
-| Blanco | `B`; si `B` es símbolo de Γ o valor de caché, `□` (`blank_glyph`) | `[q0,B]B` |
+| Blanco | `B`; si `B` es símbolo de Γ o valor de caché, el primer carácter libre desde `□` (`□`, `▢`, …; `blank_glyph`) | `[q0,B]B` |
 | Rango visible | De `min(0, cabezal, celdas no blancas)` a `max(longitud(w) − 1, cabezal, celdas no blancas)` | `BBB#XXXB[q5,B]B` |
 
 El rango incluye siempre la zona donde se escribió la entrada, para conservar
@@ -178,7 +178,7 @@ laboratorios 9 y 10:
 
 | Paso | En la salida |
 |---|---|
-| 1–2. Componentes formales y δ | Bloque inicial `Q`, `Σ`, `Γ`, `q0`, `F`, `B` y número de reglas |
+| 1–2. Componentes formales y δ | Bloque inicial `Q`, `Σ`, `Γ`, `q0`, `F`, `B` y la tabla δ completa, numerada en el orden del YAML |
 | 3. Configuración inicial | Fila 0 de la tabla de IDs: `[q0,B]w` |
 | 4–6. Leer, buscar δ, escribir y mover | Columna «Transición aplicada» de cada fila |
 | 7. Registrar la nueva ID | Una fila por ID, de ID_0 a ID_n, sin recortar |

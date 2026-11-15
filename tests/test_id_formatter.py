@@ -78,6 +78,17 @@ def test_blank_glyph_avoids_ambiguity_with_symbol_b():
     assert (blank_glyph(plain), blank_glyph(with_b), blank_glyph(cache_b)) == ("B", "□", "□")
 
 
+def test_blank_glyph_is_never_a_symbol_or_cache_value_of_the_machine():
+    """Observación L-2 del Gate 02: con B y □ en Γ, □ también sería ambiguo."""
+    both = TuringMachine({"s"}, {"a"}, {"a", "B", "□", BLANK}, "s", "s", ())
+    cache = TuringMachine({"s"}, {"a"}, {"a", "B", BLANK}, "s", "s", (Transition("s", BLANK, "a", "s", "□", "a", Move.R),))
+    crowded = TuringMachine({"s"}, {"a"}, {"a", "B", "□", "▢", BLANK}, "s", "s", ())
+    assert (blank_glyph(both), blank_glyph(cache), blank_glyph(crowded)) == ("▢", "▢", "▣")
+    machine = TuringMachine({"s", "f"}, {"a"}, {"a", "B", "□", BLANK}, "s", "f", (Transition("s", BLANK, "a", "f", BLANK, "□", Move.R),))
+    final = build_trace(simulate(machine, "a")).final
+    assert format_id(final, 1, blank_glyph(machine)) == "□[f,▢]▢"
+
+
 def test_rule_notation_matches_the_statement():
     rule = Transition("q0", BLANK, "a", "q1", "a", BLANK, Move.R)
     assert format_rule(rule) == "δ([q0, B], a) = ([q1, a], B, R)"

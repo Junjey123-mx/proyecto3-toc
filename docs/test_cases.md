@@ -424,11 +424,37 @@ propaga el acarreo (`[q1,1]`) y B al terminar (`[q2,B]`).
 - La traza de una cadena larga es extensa (T(n) = 2n² + 2n + 1 en la
   reconocedora) y las IDs se imprimen completas; la cota por defecto es de
   10 000 transiciones por cadena (`--max-steps`).
-- El blanco se muestra como `B`; solo si `B` es un símbolo de la máquina se
-  cambia a `□`. Ninguna de las dos máquinas usa `B` como símbolo.
+- El blanco se muestra como `B`; solo si `B` es un símbolo de la máquina (de Γ
+  o de la caché) se cambia al primer carácter libre desde `□` (`□`, `▢`, …).
+  Ninguna de las dos máquinas usa `B` como símbolo.
+- La tupla de control se escribe `[q,c]` sin escapar sus componentes: un estado
+  o un valor de caché que contenga `[`, `,` o `]` haría ambigua la ID. El
+  validador no lo prohíbe porque el enunciado no lo exige; ninguna de las dos
+  máquinas usa esos caracteres.
 
 ### 3.6 Verificación de la suite
 
 `python -m pytest -q` en el mismo entorno: **310 pruebas aprobadas y 1 omitida**.
 La omitida es `test_unreadable_file`, que solo se ejecuta donde `chmod(0)`
 puede quitar el permiso de lectura (no ocurre en Windows ni con usuario root).
+
+### 3.7 Dificultad de las máquinas: decisión del Gate 03
+
+La rúbrica asigna 3 puntos a la dificultad de cada máquina, pero no define una
+escala. Se decidió **conservar las dos máquinas** en lugar de reemplazarlas:
+ambas son correctas frente a oráculos independientes, {aⁿbⁿ | n ≥ 1} es uno de
+los ejemplos que el propio enunciado admite para la reconocedora y sustituir
+máquinas verificadas antes de la entrega aumentaría el riesgo sin un criterio
+de evaluación conocido. No se afirma ninguna puntuación.
+
+Lo que se puede defender de cada una:
+
+| Máquina | Elementos de dificultad | Lo que no se afirma |
+|---|---|---|
+| Reconocedora | 5 estados y 10 reglas; dos marcadores (`X`, `Y`); barridos de ida y vuelta por ronda; cinco claves sin regla, cada una con un motivo de rechazo distinto (§1.4); demostración de corrección (§1.5); T(n) = 2n² + 2n + 1 | Que sea un diseño original: es el ejemplo 8.2 de Hopcroft et al. (2001), citado. No usa la caché |
+| Alteradora | Escritura real sobre la cinta; propagación del acarreo; desbordamiento hacia la posición −1 sin desplazar la entrada; sin blancos residuales; conserva los ceros a la izquierda; T(w) = \|w\| + t + 2 | Que la caché sea indispensable: vale `1` exactamente cuando el estado es q1, así que el estado ya codifica el acarreo. Se usa para mostrar el mecanismo `mem_cache_value` (clave de lectura y valor escrito) |
+
+Si el equipo decide reforzar este rubro, la alternativa es agregar una máquina
+cuyo algoritmo dependa de la caché (por ejemplo, invertir una cadena o
+reconocer w#w llevando el símbolo pendiente en la caché), definida solo en
+YAML, con su propia tabla δ, oráculo independiente y commits separados.

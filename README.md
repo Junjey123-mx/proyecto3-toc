@@ -128,7 +128,7 @@ python main.py --help
 El programa simula en orden cada cadena de `simulation_strings` y escribe en la
 salida estándar:
 
-1. La descripción formal de la máquina (Q, Σ, Γ, q0, F, blanco y número de reglas).
+1. La descripción formal de la máquina (Q, Σ, Γ, q0, F, blanco) y la tabla δ completa, numerada en el orden del YAML.
 2. Por cada cadena: resultado (`ACCEPTED`, `REJECTED` o `LIMIT_EXCEEDED`), motivo,
    pasos, estado, caché y cabezal finales, contenido final de la cinta, ID final,
    vista de la cinta con la posición del cabezal y la tabla completa de

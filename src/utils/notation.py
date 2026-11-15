@@ -1,5 +1,7 @@
 """Notación textual del curso para símbolos, tuplas de control y reglas de δ."""
 
+from itertools import chain, count
+
 from src.model.transition import BLANK, Symbol, Transition
 from src.model.turing_machine import TuringMachine
 
@@ -7,19 +9,21 @@ DEFAULT_BLANK_GLYPH = "B"
 """Representación del blanco en las IDs, como en los laboratorios (``BBB#XXXB[q5,B]B``)."""
 
 FALLBACK_BLANK_GLYPH = "□"
-"""Representación alternativa si ``B`` es un símbolo ordinario de la máquina."""
+"""Primera alternativa si ``B`` es un símbolo ordinario de la máquina; le siguen ``▢``, ``▣``, …"""
 
 
 def blank_glyph(machine: TuringMachine) -> str:
     """Carácter con el que se mostrará el blanco para ``machine``.
 
     Es ``B`` salvo que ``B`` aparezca en Γ o como valor de caché de alguna regla;
-    en ese caso se usa ``□`` para que la ID no sea ambigua.
+    en ese caso es el primer carácter desde ``□`` (U+25A1) que la máquina no use,
+    para que el blanco nunca se confunda con un símbolo de la cinta o de la caché.
     """
     used = set(machine.tape_alphabet)
     for rule in machine.transitions:
         used.update((rule.cache, rule.next_cache))
-    return FALLBACK_BLANK_GLYPH if DEFAULT_BLANK_GLYPH in used else DEFAULT_BLANK_GLYPH
+    candidates = chain([DEFAULT_BLANK_GLYPH], map(chr, count(ord(FALLBACK_BLANK_GLYPH))))
+    return next(glyph for glyph in candidates if glyph not in used)
 
 
 def show_symbol(symbol: Symbol, blank: str = DEFAULT_BLANK_GLYPH) -> str:
