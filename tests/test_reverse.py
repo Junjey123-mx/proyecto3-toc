@@ -113,7 +113,7 @@ def test_empty_input_is_its_own_reverse(machine):
 
 
 def test_hand_trace_of_10110(machine):
-    """Fin de cada ronda: el par colocado se lee en las marcas o/i (README.md, sección 11)."""
+    """Fin de cada ronda: el par colocado se lee en las marcas o/i (README.md, §12.7)."""
     trace = run(machine, "10110")
     ids = {entry.step: format_id(entry, 5) for entry in trace.entries}
     assert ids[0] == "[q0,B]10110"

@@ -1,0 +1,241 @@
+Máquina: machines/transformer_binary_reverse.yaml
+  Q  = {q0, q1, q2, q3, q4, q5, q6}
+  Σ  = {0, 1}
+  Γ  = {*, 0, 1, i, o, B}
+  q0 = q0
+  F  = {q6}
+  B  = B (blanco)
+  δ  = 33 reglas, en el orden del YAML:
+     1. δ([q0, B], 0) = ([q1, 0], *, R)
+     2. δ([q0, B], 1) = ([q1, 1], *, R)
+     3. δ([q0, B], o) = ([q4, B], o, L)
+     4. δ([q0, B], i) = ([q4, B], i, L)
+     5. δ([q0, B], B) = ([q6, B], B, S)
+     6. δ([q1, 0], 0) = ([q1, 0], 0, R)
+     7. δ([q1, 0], 1) = ([q1, 0], 1, R)
+     8. δ([q1, 0], o) = ([q2, 0], o, L)
+     9. δ([q1, 0], i) = ([q2, 0], i, L)
+    10. δ([q1, 0], B) = ([q2, 0], B, L)
+    11. δ([q1, 1], 0) = ([q1, 1], 0, R)
+    12. δ([q1, 1], 1) = ([q1, 1], 1, R)
+    13. δ([q1, 1], o) = ([q2, 1], o, L)
+    14. δ([q1, 1], i) = ([q2, 1], i, L)
+    15. δ([q1, 1], B) = ([q2, 1], B, L)
+    16. δ([q2, 0], 0) = ([q3, 0], o, L)
+    17. δ([q2, 0], 1) = ([q3, 1], o, L)
+    18. δ([q2, 0], *) = ([q4, B], o, L)
+    19. δ([q2, 1], 0) = ([q3, 0], i, L)
+    20. δ([q2, 1], 1) = ([q3, 1], i, L)
+    21. δ([q2, 1], *) = ([q4, B], i, L)
+    22. δ([q3, 0], 0) = ([q3, 0], 0, L)
+    23. δ([q3, 0], 1) = ([q3, 0], 1, L)
+    24. δ([q3, 0], *) = ([q0, B], o, R)
+    25. δ([q3, 1], 0) = ([q3, 1], 0, L)
+    26. δ([q3, 1], 1) = ([q3, 1], 1, L)
+    27. δ([q3, 1], *) = ([q0, B], i, R)
+    28. δ([q4, B], o) = ([q4, B], o, L)
+    29. δ([q4, B], i) = ([q4, B], i, L)
+    30. δ([q4, B], B) = ([q5, B], B, R)
+    31. δ([q5, B], o) = ([q5, B], 0, R)
+    32. δ([q5, B], i) = ([q5, B], 1, R)
+    33. δ([q5, B], B) = ([q6, B], B, S)
+Cadenas: 4 · límite de pasos por cadena: 10000
+
+=== Cadena 1 de 4: '10110' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q6'
+Pasos:         30
+Estado final:  q6
+Caché final:   B
+Cabezal final: 5
+Cinta final:   01101
+ID final:      01101[q6,B]B
+
+posición 0 1 2 3 4 5
+cinta    0 1 1 0 1 B
+cabezal            ^
+
+Descripciones instantáneas (ID_0 a ID_30):
+  Paso  ID            Transición aplicada
+     0  [q0,B]10110   —
+     1  *[q1,1]0110   δ([q0, B], 1) = ([q1, 1], *, R)
+     2  *0[q1,1]110   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     3  *01[q1,1]10   δ([q1, 1], 1) = ([q1, 1], 1, R)
+     4  *011[q1,1]0   δ([q1, 1], 1) = ([q1, 1], 1, R)
+     5  *0110[q1,1]B  δ([q1, 1], 0) = ([q1, 1], 0, R)
+     6  *011[q2,1]0   δ([q1, 1], B) = ([q2, 1], B, L)
+     7  *01[q3,0]1i   δ([q2, 1], 0) = ([q3, 0], i, L)
+     8  *0[q3,0]11i   δ([q3, 0], 1) = ([q3, 0], 1, L)
+     9  *[q3,0]011i   δ([q3, 0], 1) = ([q3, 0], 1, L)
+    10  [q3,0]*011i   δ([q3, 0], 0) = ([q3, 0], 0, L)
+    11  o[q0,B]011i   δ([q3, 0], *) = ([q0, B], o, R)
+    12  o*[q1,0]11i   δ([q0, B], 0) = ([q1, 0], *, R)
+    13  o*1[q1,0]1i   δ([q1, 0], 1) = ([q1, 0], 1, R)
+    14  o*11[q1,0]i   δ([q1, 0], 1) = ([q1, 0], 1, R)
+    15  o*1[q2,0]1i   δ([q1, 0], i) = ([q2, 0], i, L)
+    16  o*[q3,1]1oi   δ([q2, 0], 1) = ([q3, 1], o, L)
+    17  o[q3,1]*1oi   δ([q3, 1], 1) = ([q3, 1], 1, L)
+    18  oi[q0,B]1oi   δ([q3, 1], *) = ([q0, B], i, R)
+    19  oi*[q1,1]oi   δ([q0, B], 1) = ([q1, 1], *, R)
+    20  oi[q2,1]*oi   δ([q1, 1], o) = ([q2, 1], o, L)
+    21  o[q4,B]iioi   δ([q2, 1], *) = ([q4, B], i, L)
+    22  [q4,B]oiioi   δ([q4, B], i) = ([q4, B], i, L)
+    23  [q4,B]Boiioi  δ([q4, B], o) = ([q4, B], o, L)
+    24  [q5,B]oiioi   δ([q4, B], B) = ([q5, B], B, R)
+    25  0[q5,B]iioi   δ([q5, B], o) = ([q5, B], 0, R)
+    26  01[q5,B]ioi   δ([q5, B], i) = ([q5, B], 1, R)
+    27  011[q5,B]oi   δ([q5, B], i) = ([q5, B], 1, R)
+    28  0110[q5,B]i   δ([q5, B], o) = ([q5, B], 0, R)
+    29  01101[q5,B]B  δ([q5, B], i) = ([q5, B], 1, R)
+    30  01101[q6,B]B  δ([q5, B], B) = ([q6, B], B, S)
+
+=== Cadena 2 de 4: '11001' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q6'
+Pasos:         30
+Estado final:  q6
+Caché final:   B
+Cabezal final: 5
+Cinta final:   10011
+ID final:      10011[q6,B]B
+
+posición 0 1 2 3 4 5
+cinta    1 0 0 1 1 B
+cabezal            ^
+
+Descripciones instantáneas (ID_0 a ID_30):
+  Paso  ID            Transición aplicada
+     0  [q0,B]11001   —
+     1  *[q1,1]1001   δ([q0, B], 1) = ([q1, 1], *, R)
+     2  *1[q1,1]001   δ([q1, 1], 1) = ([q1, 1], 1, R)
+     3  *10[q1,1]01   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     4  *100[q1,1]1   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     5  *1001[q1,1]B  δ([q1, 1], 1) = ([q1, 1], 1, R)
+     6  *100[q2,1]1   δ([q1, 1], B) = ([q2, 1], B, L)
+     7  *10[q3,1]0i   δ([q2, 1], 1) = ([q3, 1], i, L)
+     8  *1[q3,1]00i   δ([q3, 1], 0) = ([q3, 1], 0, L)
+     9  *[q3,1]100i   δ([q3, 1], 0) = ([q3, 1], 0, L)
+    10  [q3,1]*100i   δ([q3, 1], 1) = ([q3, 1], 1, L)
+    11  i[q0,B]100i   δ([q3, 1], *) = ([q0, B], i, R)
+    12  i*[q1,1]00i   δ([q0, B], 1) = ([q1, 1], *, R)
+    13  i*0[q1,1]0i   δ([q1, 1], 0) = ([q1, 1], 0, R)
+    14  i*00[q1,1]i   δ([q1, 1], 0) = ([q1, 1], 0, R)
+    15  i*0[q2,1]0i   δ([q1, 1], i) = ([q2, 1], i, L)
+    16  i*[q3,0]0ii   δ([q2, 1], 0) = ([q3, 0], i, L)
+    17  i[q3,0]*0ii   δ([q3, 0], 0) = ([q3, 0], 0, L)
+    18  io[q0,B]0ii   δ([q3, 0], *) = ([q0, B], o, R)
+    19  io*[q1,0]ii   δ([q0, B], 0) = ([q1, 0], *, R)
+    20  io[q2,0]*ii   δ([q1, 0], i) = ([q2, 0], i, L)
+    21  i[q4,B]ooii   δ([q2, 0], *) = ([q4, B], o, L)
+    22  [q4,B]iooii   δ([q4, B], o) = ([q4, B], o, L)
+    23  [q4,B]Biooii  δ([q4, B], i) = ([q4, B], i, L)
+    24  [q5,B]iooii   δ([q4, B], B) = ([q5, B], B, R)
+    25  1[q5,B]ooii   δ([q5, B], i) = ([q5, B], 1, R)
+    26  10[q5,B]oii   δ([q5, B], o) = ([q5, B], 0, R)
+    27  100[q5,B]ii   δ([q5, B], o) = ([q5, B], 0, R)
+    28  1001[q5,B]i   δ([q5, B], i) = ([q5, B], 1, R)
+    29  10011[q5,B]B  δ([q5, B], i) = ([q5, B], 1, R)
+    30  10011[q6,B]B  δ([q5, B], B) = ([q6, B], B, S)
+
+=== Cadena 3 de 4: '10000' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q6'
+Pasos:         30
+Estado final:  q6
+Caché final:   B
+Cabezal final: 5
+Cinta final:   00001
+ID final:      00001[q6,B]B
+
+posición 0 1 2 3 4 5
+cinta    0 0 0 0 1 B
+cabezal            ^
+
+Descripciones instantáneas (ID_0 a ID_30):
+  Paso  ID            Transición aplicada
+     0  [q0,B]10000   —
+     1  *[q1,1]0000   δ([q0, B], 1) = ([q1, 1], *, R)
+     2  *0[q1,1]000   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     3  *00[q1,1]00   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     4  *000[q1,1]0   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     5  *0000[q1,1]B  δ([q1, 1], 0) = ([q1, 1], 0, R)
+     6  *000[q2,1]0   δ([q1, 1], B) = ([q2, 1], B, L)
+     7  *00[q3,0]0i   δ([q2, 1], 0) = ([q3, 0], i, L)
+     8  *0[q3,0]00i   δ([q3, 0], 0) = ([q3, 0], 0, L)
+     9  *[q3,0]000i   δ([q3, 0], 0) = ([q3, 0], 0, L)
+    10  [q3,0]*000i   δ([q3, 0], 0) = ([q3, 0], 0, L)
+    11  o[q0,B]000i   δ([q3, 0], *) = ([q0, B], o, R)
+    12  o*[q1,0]00i   δ([q0, B], 0) = ([q1, 0], *, R)
+    13  o*0[q1,0]0i   δ([q1, 0], 0) = ([q1, 0], 0, R)
+    14  o*00[q1,0]i   δ([q1, 0], 0) = ([q1, 0], 0, R)
+    15  o*0[q2,0]0i   δ([q1, 0], i) = ([q2, 0], i, L)
+    16  o*[q3,0]0oi   δ([q2, 0], 0) = ([q3, 0], o, L)
+    17  o[q3,0]*0oi   δ([q3, 0], 0) = ([q3, 0], 0, L)
+    18  oo[q0,B]0oi   δ([q3, 0], *) = ([q0, B], o, R)
+    19  oo*[q1,0]oi   δ([q0, B], 0) = ([q1, 0], *, R)
+    20  oo[q2,0]*oi   δ([q1, 0], o) = ([q2, 0], o, L)
+    21  o[q4,B]oooi   δ([q2, 0], *) = ([q4, B], o, L)
+    22  [q4,B]ooooi   δ([q4, B], o) = ([q4, B], o, L)
+    23  [q4,B]Booooi  δ([q4, B], o) = ([q4, B], o, L)
+    24  [q5,B]ooooi   δ([q4, B], B) = ([q5, B], B, R)
+    25  0[q5,B]oooi   δ([q5, B], o) = ([q5, B], 0, R)
+    26  00[q5,B]ooi   δ([q5, B], o) = ([q5, B], 0, R)
+    27  000[q5,B]oi   δ([q5, B], o) = ([q5, B], 0, R)
+    28  0000[q5,B]i   δ([q5, B], o) = ([q5, B], 0, R)
+    29  00001[q5,B]B  δ([q5, B], i) = ([q5, B], 1, R)
+    30  00001[q6,B]B  δ([q5, B], B) = ([q6, B], B, S)
+
+=== Cadena 4 de 4: '11100' (longitud 5) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q6'
+Pasos:         30
+Estado final:  q6
+Caché final:   B
+Cabezal final: 5
+Cinta final:   00111
+ID final:      00111[q6,B]B
+
+posición 0 1 2 3 4 5
+cinta    0 0 1 1 1 B
+cabezal            ^
+
+Descripciones instantáneas (ID_0 a ID_30):
+  Paso  ID            Transición aplicada
+     0  [q0,B]11100   —
+     1  *[q1,1]1100   δ([q0, B], 1) = ([q1, 1], *, R)
+     2  *1[q1,1]100   δ([q1, 1], 1) = ([q1, 1], 1, R)
+     3  *11[q1,1]00   δ([q1, 1], 1) = ([q1, 1], 1, R)
+     4  *110[q1,1]0   δ([q1, 1], 0) = ([q1, 1], 0, R)
+     5  *1100[q1,1]B  δ([q1, 1], 0) = ([q1, 1], 0, R)
+     6  *110[q2,1]0   δ([q1, 1], B) = ([q2, 1], B, L)
+     7  *11[q3,0]0i   δ([q2, 1], 0) = ([q3, 0], i, L)
+     8  *1[q3,0]10i   δ([q3, 0], 0) = ([q3, 0], 0, L)
+     9  *[q3,0]110i   δ([q3, 0], 1) = ([q3, 0], 1, L)
+    10  [q3,0]*110i   δ([q3, 0], 1) = ([q3, 0], 1, L)
+    11  o[q0,B]110i   δ([q3, 0], *) = ([q0, B], o, R)
+    12  o*[q1,1]10i   δ([q0, B], 1) = ([q1, 1], *, R)
+    13  o*1[q1,1]0i   δ([q1, 1], 1) = ([q1, 1], 1, R)
+    14  o*10[q1,1]i   δ([q1, 1], 0) = ([q1, 1], 0, R)
+    15  o*1[q2,1]0i   δ([q1, 1], i) = ([q2, 1], i, L)
+    16  o*[q3,0]1ii   δ([q2, 1], 0) = ([q3, 0], i, L)
+    17  o[q3,0]*1ii   δ([q3, 0], 1) = ([q3, 0], 1, L)
+    18  oo[q0,B]1ii   δ([q3, 0], *) = ([q0, B], o, R)
+    19  oo*[q1,1]ii   δ([q0, B], 1) = ([q1, 1], *, R)
+    20  oo[q2,1]*ii   δ([q1, 1], i) = ([q2, 1], i, L)
+    21  o[q4,B]oiii   δ([q2, 1], *) = ([q4, B], i, L)
+    22  [q4,B]ooiii   δ([q4, B], o) = ([q4, B], o, L)
+    23  [q4,B]Booiii  δ([q4, B], o) = ([q4, B], o, L)
+    24  [q5,B]ooiii   δ([q4, B], B) = ([q5, B], B, R)
+    25  0[q5,B]oiii   δ([q5, B], o) = ([q5, B], 0, R)
+    26  00[q5,B]iii   δ([q5, B], o) = ([q5, B], 0, R)
+    27  001[q5,B]ii   δ([q5, B], i) = ([q5, B], 1, R)
+    28  0011[q5,B]i   δ([q5, B], i) = ([q5, B], 1, R)
+    29  00111[q5,B]B  δ([q5, B], i) = ([q5, B], 1, R)
+    30  00111[q6,B]B  δ([q5, B], B) = ([q6, B], B, S)
+
+=== Resumen ===
+#  Cadena  Longitud  Resultado  Pasos  Cinta final
+1  10110   5         ACCEPTED   30     01101
+2  11001   5         ACCEPTED   30     10011
+3  10000   5         ACCEPTED   30     00001
+4  11100   5         ACCEPTED   30     00111

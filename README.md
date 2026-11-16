@@ -2,6 +2,8 @@
 
 Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripción formal de la máquina y sus cadenas de prueba desde un archivo YAML con el formato del enunciado, valida la definición, ejecuta las transiciones declaradas y muestra, para cada cadena, todas las descripciones instantáneas (IDs), la cinta final y si la cadena se acepta o se rechaza.
 
+El proyecto incluye cuatro máquinas definidas solo en YAML y ejecutadas por el mismo motor: una reconocedora de {aⁿbⁿ | n ≥ 1} y tres alteradoras (incremento binario, inversión de cadenas binarias y suma de dos números binarios). Se usan por comandos (`--machine ARCHIVO`) o desde un menú numérico (`--interactive`) que presenta cada máquina y ejecuta una cadena por vez.
+
 **Curso:** CC2019 — Teoría de la Computación
 **Universidad:** Universidad del Valle de Guatemala
 **Profesor:** Ing. Bidkar Pojoy
@@ -12,7 +14,7 @@ Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripc
 
 ## Video explicativo
 
-**Estado:** pendiente de grabación y publicación. El enlace no listado de YouTube se agregará en esta sección cuando el video exista. El guion, los comandos y la evidencia de la demostración están en [§22](#22-demostración-y-video).
+**Estado:** pendiente de grabación y publicación. El enlace no listado de YouTube se agregará en esta sección cuando el video exista. El guion, los comandos y la evidencia de la demostración están en [§25](#25-demostración-y-video).
 
 ---
 
@@ -28,20 +30,23 @@ Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripc
 8. [Motor de simulación y condiciones de parada](#8-motor-de-simulación-y-condiciones-de-parada)
 9. [Descripciones instantáneas](#9-descripciones-instantáneas)
 10. [Máquina reconocedora](#10-máquina-reconocedora)
-11. [Máquina alteradora](#11-máquina-alteradora)
-12. [Dificultad de las máquinas](#12-dificultad-de-las-máquinas)
-13. [Decisiones de implementación en Python](#13-decisiones-de-implementación-en-python)
-14. [Estrategia de validación](#14-estrategia-de-validación)
-15. [Pruebas automatizadas](#15-pruebas-automatizadas)
-16. [Instalación y ejecución](#16-instalación-y-ejecución)
-17. [Resultados de la demostración](#17-resultados-de-la-demostración)
-18. [Ejemplo completo](#18-ejemplo-completo)
-19. [Discusión](#19-discusión)
-20. [Limitaciones y alcance](#20-limitaciones-y-alcance)
-21. [Organización del proyecto](#21-organización-del-proyecto)
-22. [Demostración y video](#22-demostración-y-video)
-23. [Desarrollo y autoría](#23-desarrollo-y-autoría)
-24. [Referencias bibliográficas](#24-referencias-bibliográficas)
+11. [Máquina alteradora: incremento binario](#11-máquina-alteradora-incremento-binario)
+12. [Máquina alteradora: inversión de cadenas](#12-máquina-alteradora-inversión-de-cadenas)
+13. [Máquina alteradora: suma binaria](#13-máquina-alteradora-suma-binaria)
+14. [Dificultad de las máquinas](#14-dificultad-de-las-máquinas)
+15. [Menú interactivo](#15-menú-interactivo)
+16. [Decisiones de implementación en Python](#16-decisiones-de-implementación-en-python)
+17. [Estrategia de validación](#17-estrategia-de-validación)
+18. [Pruebas automatizadas](#18-pruebas-automatizadas)
+19. [Instalación y ejecución](#19-instalación-y-ejecución)
+20. [Resultados de la demostración](#20-resultados-de-la-demostración)
+21. [Ejemplo completo](#21-ejemplo-completo)
+22. [Discusión](#22-discusión)
+23. [Limitaciones y alcance](#23-limitaciones-y-alcance)
+24. [Organización del proyecto](#24-organización-del-proyecto)
+25. [Demostración y video](#25-demostración-y-video)
+26. [Desarrollo y autoría](#26-desarrollo-y-autoría)
+27. [Referencias bibliográficas](#27-referencias-bibliográficas)
 
 ---
 
@@ -57,9 +62,10 @@ Simulador de máquinas de Turing de una cinta escrito en Python. Lee la descripc
 4. Mostrar la descripción instantánea de cada paso de la simulación.
 5. Decidir la aceptación o el rechazo de cada entrada.
 6. Distinguir la aceptación, el rechazo, la detención por el límite de pasos y los errores de configuración.
-7. Diseñar, verificar y documentar una MT reconocedora y una MT alteradora para la demostración.
+7. Diseñar, verificar y documentar una MT reconocedora y tres MT alteradoras, con la suma binaria como alteradora principal de la demostración.
+8. Ofrecer un menú interactivo que presente cada máquina y ejecute, una por vez, cadenas predefinidas o ingresadas en la terminal.
 
-El programa:
+Con `python main.py --machine ARCHIVO`, el programa:
 
 1. lee un archivo YAML con la máquina y su lista de cadenas;
 2. valida la estructura, los tipos y la coherencia formal, y reporta cada error con el campo exacto (`delta[4].output.final_state`);
@@ -68,7 +74,9 @@ El programa:
 5. imprime, por cadena, el resultado y su motivo, la cinta final, la ID final y la tabla completa «Paso | ID | Transición aplicada»;
 6. termina con un resumen de todas las cadenas.
 
-Ninguna parte del código de Python conoce las máquinas de la demostración: las dos se definen solo en YAML y las ejecuta el mismo motor.
+Con `python main.py --interactive` se elige una de las cuatro máquinas en un menú, se lee su ficha técnica (componentes, tabla δ y procedimiento) y se ejecuta una cadena por vez con el mismo reporte completo ([§15](#15-menú-interactivo)).
+
+Ninguna parte del código de Python conoce las máquinas: las cuatro se definen solo en YAML y las ejecuta el mismo motor. La inversión y la suma se calculan con reglas δ; `w[::-1]` e `int(A, 2) + int(B, 2)` solo aparecen en las pruebas, como oráculos.
 
 ## 2. Requisitos del enunciado y rúbrica
 
@@ -83,22 +91,22 @@ Ninguna parte del código de Python conoce las máquinas de la demostración: la
 | Indicar «aceptada» si la ID final contiene un estado final | `ACCEPTED`, con el motivo «alcanzó el estado final» | [§8](#8-motor-de-simulación-y-condiciones-de-parada) |
 | Indicar «rechazada» si se detiene sin transición aplicable | `REJECTED`, con el estado, la caché y el símbolo sin regla | [§8](#8-motor-de-simulación-y-condiciones-de-parada) |
 | MT reconocedora: 2 aceptadas y 2 rechazadas de longitud ≥ 5 | L = {aⁿbⁿ \| n ≥ 1}: `aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas | [§10](#10-máquina-reconocedora) |
-| MT alteradora: 4 cadenas de longitud ≥ 5, sin dejar todo en blanco | Incremento binario: `10101`, `11011`, `11111`, `10000` | [§11](#11-máquina-alteradora) |
-| Proporcionar las funciones de transición | Tablas δ en este README y en la cabecera de la salida del programa | [§10.4](#104-tabla-de-transiciones), [§11.5](#115-tabla-de-transiciones) |
-| Video no listado con las ejecuciones y la arquitectura | Pendiente; guion preparado | [§22](#22-demostración-y-video) |
+| MT alteradora: 4 cadenas de longitud ≥ 5, sin dejar todo en blanco | Principal, suma binaria: `1011#0110`, `1111#0001`, `10101#10111`, `10000#00001`. Complementarias: incremento binario e inversión, con cuatro cadenas cada una | [§13](#13-máquina-alteradora-suma-binaria), [§11](#11-máquina-alteradora-incremento-binario), [§12](#12-máquina-alteradora-inversión-de-cadenas) |
+| Proporcionar las funciones de transición | Tablas δ en este README, en la cabecera de la salida del programa y en la ficha del menú | [§10.4](#104-tabla-de-transiciones), [§11.5](#115-tabla-de-transiciones), [§12.5](#125-tabla-de-transiciones), [§13.5](#135-tabla-de-transiciones) |
+| Video no listado con las ejecuciones y la arquitectura | Pendiente; guion preparado | [§25](#25-demostración-y-video) |
 | Repositorio privado y README en la raíz | Repositorio privado en GitHub; este archivo | — |
 
-**Decisiones propias (no exigidas por el enunciado).** El resultado `LIMIT_EXCEEDED` y la opción `--max-steps`, los estados finales terminales, la exigencia de símbolos de un solo carácter, el rechazo de claves YAML repetidas y la notación exacta de la cinta y del blanco. Se explican en [§7.4](#74-decisiones-adoptadas), [§8](#8-motor-de-simulación-y-condiciones-de-parada) y [§13](#13-decisiones-de-implementación-en-python).
+**Decisiones propias (no exigidas por el enunciado).** El resultado `LIMIT_EXCEEDED` y la opción `--max-steps`, los estados finales terminales, la exigencia de símbolos de un solo carácter, el rechazo de claves YAML repetidas, la notación exacta de la cinta y del blanco, las dos alteradoras adicionales y el menú `--interactive` ([§15](#15-menú-interactivo)). Se explican en [§7.4](#74-decisiones-adoptadas), [§8](#8-motor-de-simulación-y-condiciones-de-parada) y [§16](#16-decisiones-de-implementación-en-python).
 
 **Rúbrica oficial (15 puntos).** La tabla indica qué evidencia aporta el repositorio para cada rubro. No es una nota prevista: la dificultad no tiene una escala definida en el enunciado y el video todavía no existe.
 
 | Rubro | Puntos | Evidencia en el repositorio |
 |---|---:|---|
-| Reconocedora: 2 cadenas aceptadas | 2 | `aaabbb` (25 pasos) y `aaaabbbb` (41 pasos), [§17](#17-resultados-de-la-demostración) |
+| Reconocedora: 2 cadenas aceptadas | 2 | `aaabbb` (25 pasos) y `aaaabbbb` (41 pasos), [§20](#20-resultados-de-la-demostración) |
 | Reconocedora: 2 cadenas no aceptadas | 2 | `aaabb` (17 pasos) y `aabbbb` (12 pasos), con su motivo |
-| Dificultad de la reconocedora | 3 | Definición, tabla δ, corrección y número de pasos, [§10](#10-máquina-reconocedora) y [§12](#12-dificultad-de-las-máquinas) |
-| Alteradora: 4 cadenas | 4 | Cuatro transformaciones de longitud 5, incluido el desbordamiento `11111 → 100000` |
-| Dificultad de la alteradora | 3 | Acarreo, desbordamiento a la posición −1 y caché, [§11](#11-máquina-alteradora) y [§12](#12-dificultad-de-las-máquinas) |
+| Dificultad de la reconocedora | 3 | Definición, tabla δ, corrección y número de pasos, [§10](#10-máquina-reconocedora) y [§14](#14-dificultad-de-las-máquinas) |
+| Alteradora: 4 cadenas | 4 | Suma binaria: `1011#0110 → 10001`, `1111#0001 → 10000`, `10101#10111 → 101100`, `10000#00001 → 10001`, [§20](#20-resultados-de-la-demostración) |
+| Dificultad de la alteradora | 3 | Suma: 10 estados, 57 reglas, validación del formato, acarreo de tres valores en la caché y desbordamiento a posiciones negativas, [§13](#13-máquina-alteradora-suma-binaria) y [§14](#14-dificultad-de-las-máquinas) |
 | Discusión de la arquitectura | 1 | [§5](#5-arquitectura); debe explicarse además en el video |
 | **Total** | **15** | |
 
@@ -168,10 +176,14 @@ src/model        TuringMachine (δ indexada por estado, caché y símbolo)
 src/simulator    step (una transición) → simulate (bucle y parada) → build_trace (Trace)
       │
       v
-src/output       id_formatter · tape_formatter · result_formatter     (src/utils/notation.py)
+src/output       id_formatter · tape_formatter · result_formatter · machine_formatter
+                 (src/utils/notation.py)
       │
-      v
-main.py          CLI: --machine ARCHIVO [--max-steps N]
+      ├──────────────────────────────┐
+      v                              v
+main.py --machine ARCHIVO        src/cli (main.py --interactive)
+todas las cadenas del YAML       machine_catalog: rutas y textos de presentación
+                                 interactive_menu: ficha y una cadena por vez
 ```
 
 | Capa | Archivos | Responsabilidad | No hace |
@@ -179,11 +191,12 @@ main.py          CLI: --machine ARCHIVO [--max-steps N]
 | Entrada | `src/input/` | Leer, interpretar y validar el YAML | Ejecutar la máquina |
 | Modelo | `src/model/` | Representar M, δ, la cinta, las IDs y los resultados con sus invariantes | Leer archivos ni imprimir |
 | Simulador | `src/simulator/` | Aplicar δ, decidir la parada y verificar la traza | Formatear ni leer archivos |
-| Salida | `src/output/`, `src/utils/notation.py` | Convertir la traza en texto (IDs, cinta, resultado) | Modificar el historial ni aplicar δ |
-| CLI | `main.py` | Orquestar lectura → simulación → presentación | Duplicar el motor |
+| Salida | `src/output/`, `src/utils/notation.py` | Convertir la traza y la máquina en texto (IDs, cinta, resultado, componentes y tabla δ) | Modificar el historial ni aplicar δ |
+| CLI | `main.py` | Elegir el modo y orquestar lectura → simulación → presentación | Duplicar el motor |
+| Menú | `src/cli/` | Navegar, presentar la ficha de cada máquina, validar cadenas nuevas y guardarlas durante la sesión | Simular por su cuenta, conocer reglas δ ni escribir en los YAML |
 | Pruebas | `tests/` | Ejercitar cada capa por separado y el sistema completo | — |
 
-Las dependencias van en un solo sentido: la salida depende del simulador y del modelo, el simulador del modelo, y el modelo de nada más. Los formateadores son funciones puras: reciben una `Trace` y devuelven líneas de texto. La CLI solo encadena `load_yaml → parse_machine → validate_machine → simulate → build_trace → format_*`.
+Las dependencias van en un solo sentido: el menú depende de la entrada, del simulador y de la salida; la salida, del simulador y del modelo; el simulador, del modelo; y el modelo, de nada más. Los formateadores son funciones puras: reciben una `Trace` o una `TuringMachine` y devuelven líneas de texto. Los dos modos encadenan lo mismo, `load_yaml → parse_machine → validate_machine → simulate → build_trace → format_*`: `--machine` lo hace para todas las cadenas del archivo y el menú para la cadena elegida.
 
 Flujo mínimo de uso desde Python:
 
@@ -227,9 +240,13 @@ format_id_lines(trace, blank) -> list[str]
 format_result(trace, number, total, blank) -> list[str]
 format_summary(traces, blank) -> list[str]
 blank_glyph(machine) -> str; format_rule(rule, blank) -> str
+describe_machine(machine, blank) -> list[str]             # cabecera de --machine
+formal_components(machine, blank); cache_values(machine); format_delta_table(machine, blank)
+run_menu(read=input, out=None, max_steps=10_000) -> int   # 0 al salir, 130 con Ctrl+C
+CATALOG: tuple[CatalogEntry, ...]                         # src/cli/machine_catalog.py
 ```
 
-Todas las excepciones de entrada heredan de `InputError` (a su vez `ValueError`).
+Todas las excepciones de entrada heredan de `InputError` (a su vez `ValueError`). Para decidir, use `outcome`: `reason` es un texto en español para el usuario. Una `Configuration` no es *hashable* (su cinta es un `mappingproxy`); dos IDs se comparan con `==`.
 
 ## 7. Contrato YAML
 
@@ -327,6 +344,32 @@ Un error de entrada termina el programa con código 1 antes de simular cualquier
 ### 7.6 Observaciones sobre el ejemplo del enunciado
 
 El enunciado declara su ejemplo como incompleto y, tal como está impreso, no satisface la definición formal: `tape_alphabet` omite `a` y `b` (E6) y las cadenas usan `#`, que no aparece en `alphabet`. Además, su segunda regla escribe `a` en la caché al leer `b`, mientras que el texto indica `([q1, b], B, R)`. El simulador no corrige esos datos en silencio: el parser acepta la estructura y la validación reporta cada inconsistencia (`tests/fixtures/statement_example_mt_1.yaml`). La versión completa y ejecutable es la máquina del Laboratorio 10, en `machines/examples/basic_machine.yaml` (20 reglas).
+
+### 7.7 Cómo escribir una máquina nueva
+
+Lista de comprobación, usada para las cuatro máquinas del proyecto:
+
+- El blanco es una entrada vacía (`-` en una lista, `clave:` sin valor); `B`, `'None'` y `''` no lo son.
+- `tape_alphabet` incluye todos los símbolos de `alphabet` y el blanco.
+- Se entrecomilla todo lo que YAML leería como número o booleano (estados `'0'`, símbolos `'0'`/`'1'`, cadenas binarias `'10101'`) y los símbolos con significado en YAML: `'#'` inicia un comentario y `'*'` un alias.
+- Cada símbolo es un solo carácter y cada cadena de `simulation_strings` usa solo símbolos de `alphabet`.
+- Las siete claves de cada regla son obligatorias; si la caché no se usa, se deja vacía en ambos lados.
+- No hay dos reglas con el mismo (`initial_state`, `mem_cache_value`, `tape_input`) ni claves repetidas dentro de una regla copiada.
+- Los estados finales son terminales: al entrar a F la cadena se acepta. El rechazo es detenerse fuera de F sin regla.
+
+Plantilla de una regla, δ([q0, B], 1) = ([q0, B], 1, R):
+
+```yaml
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+```
 
 ## 8. Motor de simulación y condiciones de parada
 
@@ -490,7 +533,7 @@ La numeración coincide con el orden del YAML y con la que imprime el programa. 
 | `aaabb` | 5 | REJECTED | 17 | Tras dos rondas de 7 reglas, q1 cruza `YY` y llega al blanco: falta una `b` (7 + 7 + 3) |
 | `aabbbb` | 6 | REJECTED | 12 | Tras dos rondas de 5 reglas, q3 cruza `YY` y lee `b`: sobran dos `b` (5 + 5 + 2) |
 
-## 11. Máquina alteradora
+## 11. Máquina alteradora: incremento binario
 
 **Archivo:** `machines/transformer_binary_increment.yaml` · **Función:** sucesor binario. Diseño de Derek (Gate 02).
 
@@ -577,18 +620,495 @@ En ID_11 el cabezal está en la posición −1. La regla 6 escribe el `1` nuevo 
 | `11111` | 5 | `100000` | 5 + 5 + 2 = 12 |
 | `10000` | 5 | `10001` | 5 + 0 + 2 = 7 |
 
-## 12. Dificultad de las máquinas
+## 12. Máquina alteradora: inversión de cadenas
 
-La rúbrica asigna 3 puntos a la dificultad de cada máquina, pero no define una escala. En el Gate 03 se decidió **conservar las dos máquinas**: ambas son correctas frente a oráculos independientes, {aⁿbⁿ | n ≥ 1} es el ejemplo que el propio enunciado propone para la reconocedora, y sustituir máquinas verificadas antes de la entrega aumentaría el riesgo sin un criterio de evaluación conocido. No se afirma ninguna puntuación.
+**Archivo:** `machines/transformer_binary_reverse.yaml` · **Función:** inversa de una cadena binaria. Máquina complementaria agregada en la ampliación del proyecto.
 
-| Máquina | Elementos de dificultad | Lo que no se afirma |
+### 12.1 Función calculada
+
+Para w = w₁w₂…wₙ ∈ {0, 1}*, f(w) = wᴿ = wₙ…w₂w₁: los mismos bits en orden inverso, en las mismas posiciones 0 … n−1 de la cinta. La longitud se conserva (`10000 → 00001` mantiene sus ceros) y f(ε) = ε.
+
+### 12.2 Definición formal
+
+| Componente | Valor |
+|---|---|
+| Q | {q0, q1, q2, q3, q4, q5, q6} |
+| Σ | {0, 1} |
+| Γ | {0, 1, \*, o, i, B} |
+| q0 | q0 |
+| F | {q6} |
+| Caché | Bit en tránsito c ∈ {B, 0, 1} |
+| δ | 33 reglas |
+
+### 12.3 Estados, marcadores y caché
+
+| Estado | Caché | Papel |
 |---|---|---|
-| Reconocedora | 5 estados y 10 reglas; dos marcadores (`X`, `Y`); barridos de ida y vuelta en cada ronda; cinco claves sin regla, cada una con un motivo de rechazo distinto; demostración de corrección; T(n) = 2n² + 2n + 1 | Que sea un diseño original: es el ejemplo 8.2 de Hopcroft et al. (2001), citado. No usa la caché |
-| Alteradora | Escritura real sobre la cinta; propagación del acarreo; desbordamiento hacia la posición −1 sin desplazar la entrada; sin blancos residuales; conserva los ceros a la izquierda; T(w) = \|w\| + t + 2 | Que la caché sea indispensable: vale `1` exactamente cuando el estado es q1, así que el estado ya codifica el acarreo. Se usa para mostrar el mecanismo `mem_cache_value` en la clave de lectura y en el valor escrito |
+| q0 | B | Elige el bit sin procesar más a la izquierda o detecta que ya no quedan |
+| q1 | 0 o 1 | Lleva el bit de la caché hacia el extremo derecho sin procesar |
+| q2 | 0 o 1 | Intercambia el bit de la caché con el del extremo derecho |
+| q3 | 0 o 1 | Lleva el bit recogido de vuelta al hueco |
+| q4 | B | Rebobina hasta el inicio de la cadena |
+| q5 | B | Restaura las marcas a bits |
+| q6 | B | Fin (estado final, terminal) |
 
-Si el equipo decide reforzar este rubro, la alternativa es agregar una máquina cuyo algoritmo dependa de la caché (por ejemplo, invertir una cadena, como sugiere el enunciado, o reconocer w#w llevando el símbolo pendiente en la caché), definida solo en YAML, con su propia tabla δ, un oráculo independiente y commits separados.
+| Símbolo | Significado |
+|---|---|
+| `*` | Hueco: la celda cuyo bit viaja en la caché |
+| `o` | 0 ya colocado en su posición final |
+| `i` | 1 ya colocado en su posición final |
 
-## 13. Decisiones de implementación en Python
+La caché es indispensable: q1, q2 y q3 son los mismos estados para los dos bits, y solo el segundo componente de `[q,c]` indica cuál se está trasladando. Sin caché harían falta dos copias de cada uno de esos estados. Las marcas `o`/`i` permiten leer el resultado parcial en la propia ID: en `o[q4,B]iioi` ya se ve `01101`.
+
+### 12.4 Algoritmo
+
+1. **Elegir** (q0): leer el bit sin procesar más a la izquierda, guardarlo en la caché, escribir el hueco `*` y moverse a la derecha.
+2. **Llevar** (q1): cruzar los bits sin procesar hasta un bit ya colocado o el blanco y retroceder una celda, al último bit sin procesar.
+3. **Intercambiar** (q2): escribir la marca del bit de la caché y cargar en la caché el bit que había ahí.
+4. **Regresar** (q3): cruzar los bits sin procesar hacia la izquierda hasta el hueco, escribir ahí la marca del bit de la caché, vaciarla y volver a q0.
+5. **Centro** (q2 sobre `*`): en longitud impar, el último bit sin procesar es el central; se marca en su propia celda.
+6. **Rebobinar** (q4): cuando q0 lee un bit colocado (longitud par) o tras el centro, ir al blanco anterior a la cadena.
+7. **Restaurar** (q5): convertir `o` en 0 e `i` en 1 de izquierda a derecha; en el blanco final, pasar a q6.
+
+### 12.5 Tabla de transiciones
+
+| # | Regla | Paso del algoritmo |
+|---|---|---|
+| 1 | δ([q0, B], 0) = ([q1, 0], \*, R) | Elegir |
+| 2 | δ([q0, B], 1) = ([q1, 1], \*, R) | Elegir |
+| 3 | δ([q0, B], o) = ([q4, B], o, L) | Fin de las rondas (longitud par) |
+| 4 | δ([q0, B], i) = ([q4, B], i, L) | Fin de las rondas (longitud par) |
+| 5 | δ([q0, B], B) = ([q6, B], B, S) | Entrada vacía |
+| 6 | δ([q1, 0], 0) = ([q1, 0], 0, R) | Llevar |
+| 7 | δ([q1, 0], 1) = ([q1, 0], 1, R) | Llevar |
+| 8 | δ([q1, 0], o) = ([q2, 0], o, L) | Llevar: fin del tramo sin procesar |
+| 9 | δ([q1, 0], i) = ([q2, 0], i, L) | Llevar: fin del tramo sin procesar |
+| 10 | δ([q1, 0], B) = ([q2, 0], B, L) | Llevar: fin del tramo sin procesar |
+| 11 | δ([q1, 1], 0) = ([q1, 1], 0, R) | Llevar |
+| 12 | δ([q1, 1], 1) = ([q1, 1], 1, R) | Llevar |
+| 13 | δ([q1, 1], o) = ([q2, 1], o, L) | Llevar: fin del tramo sin procesar |
+| 14 | δ([q1, 1], i) = ([q2, 1], i, L) | Llevar: fin del tramo sin procesar |
+| 15 | δ([q1, 1], B) = ([q2, 1], B, L) | Llevar: fin del tramo sin procesar |
+| 16 | δ([q2, 0], 0) = ([q3, 0], o, L) | Intercambiar |
+| 17 | δ([q2, 0], 1) = ([q3, 1], o, L) | Intercambiar |
+| 18 | δ([q2, 0], \*) = ([q4, B], o, L) | Centro (longitud impar) |
+| 19 | δ([q2, 1], 0) = ([q3, 0], i, L) | Intercambiar |
+| 20 | δ([q2, 1], 1) = ([q3, 1], i, L) | Intercambiar |
+| 21 | δ([q2, 1], \*) = ([q4, B], i, L) | Centro (longitud impar) |
+| 22 | δ([q3, 0], 0) = ([q3, 0], 0, L) | Regresar |
+| 23 | δ([q3, 0], 1) = ([q3, 0], 1, L) | Regresar |
+| 24 | δ([q3, 0], \*) = ([q0, B], o, R) | Llenar el hueco |
+| 25 | δ([q3, 1], 0) = ([q3, 1], 0, L) | Regresar |
+| 26 | δ([q3, 1], 1) = ([q3, 1], 1, L) | Regresar |
+| 27 | δ([q3, 1], \*) = ([q0, B], i, R) | Llenar el hueco |
+| 28 | δ([q4, B], o) = ([q4, B], o, L) | Rebobinar |
+| 29 | δ([q4, B], i) = ([q4, B], i, L) | Rebobinar |
+| 30 | δ([q4, B], B) = ([q5, B], B, R) | Rebobinar: inicio de la cadena |
+| 31 | δ([q5, B], o) = ([q5, B], 0, R) | Restaurar |
+| 32 | δ([q5, B], i) = ([q5, B], 1, R) | Restaurar |
+| 33 | δ([q5, B], B) = ([q6, B], B, S) | Fin |
+
+No hay claves sin regla alcanzables desde una entrada de Σ*: la máquina nunca rechaza y siempre termina en q6.
+
+### 12.6 Corrección, cinta final y número de pasos
+
+**Invariante.** Al llegar a q0 por j-ésima vez (j = 0, 1, …), las celdas k y n−1−k con k < j ya contienen las marcas de wₙ₋ₖ y wₖ₊₁ (los extremos intercambiados) y las celdas j … n−1−j conservan w sin cambios. La ronda j+1 lleva wⱼ₊₁ a la celda n−1−j y trae wₙ₋ⱼ a la celda j, así que el invariante se mantiene. Hay ⌈n/2⌉ rondas; en longitud impar la última es el centro. `tests/test_reverse.py` comprueba este invariante en cada visita a q0 para todas las cadenas de longitud 1 a 7.
+
+**Cinta final.** La máquina solo escribe en las posiciones 0 … n−1. Cada hueco se llena en la misma ronda y q5 restaura todas las marcas, de modo que la salida es contigua, sin `*`, `o` ni `i`, y con los ceros en su lugar.
+
+**Pasos.** Cada ronda completa j, con 1 ≤ j ≤ ⌊n/2⌋, cuesta 2n − 4j + 5 transiciones. El resto cuesta 3n/2 + 3 si n es par (detectar el fin, rebobinar y restaurar) y (3n + 9)/2 si es impar (el centro, rebobinar y restaurar). En total:
+
+T(0) = 1 y T(n) = ⌊(n² + 6n + 6) / 2⌋ para n ≥ 1
+
+Por ejemplo, 30 pasos para n = 5 y 48 para n = 7. El tiempo es O(n²) y el espacio, n celdas.
+
+### 12.7 Recorrido a mano: `10110 → 01101`
+
+| Paso | ID | Regla | Paso | ID | Regla |
+|---|---|---|---|---|---|
+| 0 | `[q0,B]10110` | — | 16 | `o*[q3,1]1oi` | 17 |
+| 1 | `*[q1,1]0110` | 2 | 17 | `o[q3,1]*1oi` | 26 |
+| 2 | `*0[q1,1]110` | 11 | 18 | `oi[q0,B]1oi` | 27 |
+| 3 | `*01[q1,1]10` | 12 | 19 | `oi*[q1,1]oi` | 2 |
+| 4 | `*011[q1,1]0` | 12 | 20 | `oi[q2,1]*oi` | 13 |
+| 5 | `*0110[q1,1]B` | 11 | 21 | `o[q4,B]iioi` | 21 |
+| 6 | `*011[q2,1]0` | 15 | 22 | `[q4,B]oiioi` | 29 |
+| 7 | `*01[q3,0]1i` | 19 | 23 | `[q4,B]Boiioi` | 28 |
+| 8 | `*0[q3,0]11i` | 23 | 24 | `[q5,B]oiioi` | 30 |
+| 9 | `*[q3,0]011i` | 23 | 25 | `0[q5,B]iioi` | 31 |
+| 10 | `[q3,0]*011i` | 22 | 26 | `01[q5,B]ioi` | 32 |
+| 11 | `o[q0,B]011i` | 24 | 27 | `011[q5,B]oi` | 32 |
+| 12 | `o*[q1,0]11i` | 1 | 28 | `0110[q5,B]i` | 31 |
+| 13 | `o*1[q1,0]1i` | 7 | 29 | `01101[q5,B]B` | 32 |
+| 14 | `o*11[q1,0]i` | 7 | 30 | `01101[q6,B]B` | 33 |
+| 15 | `o*1[q2,0]1i` | 9 | | | |
+
+Ronda 1 (pasos 1–11): el `1` de la posición 0 viaja en la caché (`[q1,1]`), se intercambia con el `0` de la posición 4 (paso 7, `[q3,0]`) y el `0` llena el hueco (paso 11). Ronda 2 (pasos 12–18): lo mismo con las posiciones 1 y 3. Paso 21: el bit central se marca sin moverse. Pasos 22–30: rebobinar y restaurar.
+
+### 12.8 Cadenas de la demostración
+
+| Cadena | Longitud | Salida | Pasos (T(5)) |
+|---|---|---|---|
+| `10110` | 5 | `01101` | 30 |
+| `11001` | 5 | `10011` | 30 |
+| `10000` | 5 | `00001` | 30 |
+| `11100` | 5 | `00111` | 30 |
+
+El número de pasos depende solo de la longitud: la máquina recorre las mismas celdas sea cual sea el valor de cada bit.
+
+## 13. Máquina alteradora: suma binaria
+
+**Archivo:** `machines/transformer_binary_addition.yaml` · **Función:** suma de dos números binarios. Es la alteradora principal de la demostración ([§14](#14-dificultad-de-las-máquinas)).
+
+### 13.1 Función calculada y política de salida
+
+La entrada es A#B, con A y B binarios no vacíos (bit más significativo a la izquierda) y un único separador `#`. La salida es value₂(A) + value₂(B) en binario:
+
+- **Ancho:** max(|A|, |B|) bits, y uno más si la suma se desborda (`1111#0001 → 10000`).
+- **Ceros iniciales:** se conservan hasta ese ancho (`0001#0010 → 0011`, `0#0 → 0`), igual que en el incremento binario. El resultado nunca es una cadena vacía.
+- **Operandos de distinta longitud:** el operando corto se completa con ceros a la izquierda (`1#1011 → 1100`).
+- **Región de salida:** termina en la posición |A| − 1, donde terminaba A, y crece hacia la izquierda, a posiciones negativas si B es más largo o hay desbordamiento. El separador y B se borran, así que la cinta final contiene solo el resultado.
+
+Para `10101#10111`, 21 + 23 = 44 = `101100`.
+
+### 13.2 Definición formal
+
+| Componente | Valor |
+|---|---|
+| Q | {q0, q1, …, q9} |
+| Σ | {0, 1, #} |
+| Γ | {0, 1, #, o, i, B} |
+| q0 | q0 |
+| F | {q9} |
+| Caché | Suma en tránsito o acarreo, c ∈ {B, 1, 2}; B representa 0 |
+| δ | 57 reglas |
+
+### 13.3 Estados, marcadores y caché
+
+| Estado | Caché | Papel |
+|---|---|---|
+| q0 | B | Validación: A debe empezar con un bit |
+| q1 | B | Validación: cruza A hasta `#` |
+| q2 | B | Validación: B debe empezar con un bit |
+| q3 | B | Validación: cruza B hasta el blanco final |
+| q4 | acarreo B o 1 | Toma el último bit de B o detecta que B se agotó |
+| q5 | suma B, 1 o 2 | Lleva la suma hacia A cruzando lo que queda de B |
+| q6 | suma B, 1 o 2 | Cruza el resultado parcial y suma en la columna siguiente |
+| q7 | acarreo B o 1 | Regresa con el acarreo hasta el final de B |
+| q8 | B | Borra `#` y restaura las marcas a bits |
+| q9 | B | Fin (estado final, terminal) |
+
+| Símbolo | Significado |
+|---|---|
+| `#` | Separador entre A y B (símbolo de entrada); se borra al terminar |
+| `o` | Bit 0 del resultado ya calculado |
+| `i` | Bit 1 del resultado ya calculado |
+
+La caché transporta información aritmética en los dos sentidos. Hacia la izquierda lleva b + acarreo, que vale 0, 1 o 2; hacia la derecha lleva el nuevo acarreo, 0 o 1. Sin ella, q4, q5, q6 y q7 tendrían que duplicarse o triplicarse para recordar esos valores.
+
+### 13.4 Algoritmo
+
+1. **Validar** (q0 → q3): recorrer la entrada una vez y comprobar la forma [01]⁺#[01]⁺. Cada símbolo se reescribe igual, así que una cadena mal formada se rechaza sin modificar la cinta.
+2. **Tomar** (q4): leer el último bit b de B, borrarlo y guardar en la caché b + acarreo.
+3. **Llevar** (q5): cruzar lo que queda de B hacia la izquierda hasta `#`.
+4. **Sumar** (q6): cruzar las marcas del resultado parcial; en la siguiente columna de A, o en el blanco a su izquierda, que vale 0, calcular a + caché. Escribir la marca de su bit menos significativo y dejar el acarreo en la caché.
+5. **Volver** (q7): cruzar marcas, `#` y B hacia la derecha hasta el blanco, y repetir desde el paso 2.
+6. **Acarreo final** (q4 lee `#` con caché 1): B se agotó, pero queda acarreo; volver al paso 4 con suma 1.
+7. **Restaurar** (q4 lee `#` con caché B → q8): borrar `#`, convertir `o` en 0 e `i` en 1 hacia la izquierda y detenerse en q9 en el primer bit de A no tocado o en el blanco.
+
+### 13.5 Tabla de transiciones
+
+| # | Regla | Paso del algoritmo |
+|---|---|---|
+| 1 | δ([q0, B], 0) = ([q1, B], 0, R) | Validación |
+| 2 | δ([q0, B], 1) = ([q1, B], 1, R) | Validación |
+| 3 | δ([q1, B], 0) = ([q1, B], 0, R) | Validación |
+| 4 | δ([q1, B], 1) = ([q1, B], 1, R) | Validación |
+| 5 | δ([q1, B], #) = ([q2, B], #, R) | Validación |
+| 6 | δ([q2, B], 0) = ([q3, B], 0, R) | Validación |
+| 7 | δ([q2, B], 1) = ([q3, B], 1, R) | Validación |
+| 8 | δ([q3, B], 0) = ([q3, B], 0, R) | Validación |
+| 9 | δ([q3, B], 1) = ([q3, B], 1, R) | Validación |
+| 10 | δ([q3, B], B) = ([q4, B], B, L) | Validación: fin de B |
+| 11 | δ([q4, B], 0) = ([q5, B], B, L) | Tomar el bit de B |
+| 12 | δ([q4, B], 1) = ([q5, 1], B, L) | Tomar el bit de B |
+| 13 | δ([q4, B], #) = ([q8, B], B, L) | B agotado: restaurar |
+| 14 | δ([q4, 1], 0) = ([q5, 1], B, L) | Tomar el bit de B |
+| 15 | δ([q4, 1], 1) = ([q5, 2], B, L) | Tomar el bit de B |
+| 16 | δ([q4, 1], #) = ([q6, 1], #, L) | B agotado: acarreo final |
+| 17 | δ([q5, B], 0) = ([q5, B], 0, L) | Llevar |
+| 18 | δ([q5, B], 1) = ([q5, B], 1, L) | Llevar |
+| 19 | δ([q5, B], #) = ([q6, B], #, L) | Llevar: cruzar # |
+| 20 | δ([q5, 1], 0) = ([q5, 1], 0, L) | Llevar |
+| 21 | δ([q5, 1], 1) = ([q5, 1], 1, L) | Llevar |
+| 22 | δ([q5, 1], #) = ([q6, 1], #, L) | Llevar: cruzar # |
+| 23 | δ([q5, 2], 0) = ([q5, 2], 0, L) | Llevar |
+| 24 | δ([q5, 2], 1) = ([q5, 2], 1, L) | Llevar |
+| 25 | δ([q5, 2], #) = ([q6, 2], #, L) | Llevar: cruzar # |
+| 26 | δ([q6, B], o) = ([q6, B], o, L) | Cruzar el resultado |
+| 27 | δ([q6, B], i) = ([q6, B], i, L) | Cruzar el resultado |
+| 28 | δ([q6, B], 0) = ([q7, B], o, R) | Sumar |
+| 29 | δ([q6, B], 1) = ([q7, B], i, R) | Sumar |
+| 30 | δ([q6, B], B) = ([q7, B], o, R) | Sumar en el blanco (vale 0) |
+| 31 | δ([q6, 1], o) = ([q6, 1], o, L) | Cruzar el resultado |
+| 32 | δ([q6, 1], i) = ([q6, 1], i, L) | Cruzar el resultado |
+| 33 | δ([q6, 1], 0) = ([q7, B], i, R) | Sumar |
+| 34 | δ([q6, 1], 1) = ([q7, 1], o, R) | Sumar |
+| 35 | δ([q6, 1], B) = ([q7, B], i, R) | Sumar en el blanco (vale 0) |
+| 36 | δ([q6, 2], o) = ([q6, 2], o, L) | Cruzar el resultado |
+| 37 | δ([q6, 2], i) = ([q6, 2], i, L) | Cruzar el resultado |
+| 38 | δ([q6, 2], 0) = ([q7, 1], o, R) | Sumar |
+| 39 | δ([q6, 2], 1) = ([q7, 1], i, R) | Sumar |
+| 40 | δ([q6, 2], B) = ([q7, 1], o, R) | Sumar en el blanco (vale 0) |
+| 41 | δ([q7, B], o) = ([q7, B], o, R) | Volver |
+| 42 | δ([q7, B], i) = ([q7, B], i, R) | Volver |
+| 43 | δ([q7, B], #) = ([q7, B], #, R) | Volver |
+| 44 | δ([q7, B], 0) = ([q7, B], 0, R) | Volver |
+| 45 | δ([q7, B], 1) = ([q7, B], 1, R) | Volver |
+| 46 | δ([q7, B], B) = ([q4, B], B, L) | Volver: fin de B |
+| 47 | δ([q7, 1], o) = ([q7, 1], o, R) | Volver |
+| 48 | δ([q7, 1], i) = ([q7, 1], i, R) | Volver |
+| 49 | δ([q7, 1], #) = ([q7, 1], #, R) | Volver |
+| 50 | δ([q7, 1], 0) = ([q7, 1], 0, R) | Volver |
+| 51 | δ([q7, 1], 1) = ([q7, 1], 1, R) | Volver |
+| 52 | δ([q7, 1], B) = ([q4, 1], B, L) | Volver: fin de B |
+| 53 | δ([q8, B], o) = ([q8, B], 0, L) | Restaurar |
+| 54 | δ([q8, B], i) = ([q8, B], 1, L) | Restaurar |
+| 55 | δ([q8, B], 0) = ([q9, B], 0, S) | Fin |
+| 56 | δ([q8, B], 1) = ([q9, B], 1, S) | Fin |
+| 57 | δ([q8, B], B) = ([q9, B], B, R) | Fin |
+
+### 13.6 Formato de entrada: errores y rechazos
+
+Hay que distinguir dos casos:
+
+- **Símbolos fuera de Σ = {0, 1, #}**, como `1a#0`, son un **error de entrada**. El validador del YAML, `simulate` y el menú lo informan antes de simular, y nunca se presenta como rechazo.
+- **Cadenas de Σ\* sin la forma A#B** sí se simulan. Las rechaza la pasada de validación, al detenerse sin regla y con la cinta intacta:
+
+| Entrada | Caso | Se detiene en | Clave sin regla |
+|---|---|---|---|
+| ε | Cadena vacía | q0 | (q0, B, B) |
+| `#01` | A vacío | q0 | (q0, B, #) |
+| `01#` | B vacío | q2 | (q2, B, B) |
+| `1011` | Falta el separador | q1 | (q1, B, B) |
+| `1##0` | Separadores contiguos | q2 | (q2, B, #) |
+| `1#0#1` | Separadores duplicados | q3 | (q3, B, #) |
+
+El menú interactivo comprueba además el formato A#B antes de ejecutar una cadena nueva ([§15.6](#156-validaciones-de-entrada)).
+
+### 13.7 Corrección, número de pasos y espacio
+
+**Invariante.** Al llegar a q4 por k-ésima vez durante las rondas:
+
+- ya se borraron los k últimos bits de B;
+- las k columnas menos significativas del resultado están escritas como marcas en las posiciones |A|−1 … |A|−k;
+- la caché contiene el acarreo c_k que entra en la columna k;
+- las celdas a la izquierda conservan los bits de A aún no sumados.
+
+La ronda calcula a_k + b_k + c_k: q4 carga b_k + c_k, q6 suma a_k (0 si la columna está fuera de A) y escribe el bit (a_k + b_k + c_k) mod 2 con el acarreo ⌊(a_k + b_k + c_k) / 2⌋. Es la suma escolar columna por columna. Cuando B se agota sin acarreo, los bits de A que quedan son los más significativos del resultado y no cambian. Con acarreo, se procesa una columna más.
+
+**Terminación.** Cada ronda borra un bit de B o, una vez agotado B, absorbe el acarreo en una columna más a la izquierda, donde a lo sumo hay unos de A y después blancos (0). Por eso la máquina siempre llega a q9 cuando la entrada tiene la forma A#B.
+
+**Pasos.** Sea m el número de columnas procesadas: |B| más las rondas de acarreo final. Entonces:
+
+T(A#B) = |A#B| + m² + |B|² + 4m + 3
+
+La fórmula se compone de cuatro partes:
+- la validación cuesta |A#B| + 1;
+- cada una de las |B| rondas con un bit de B cuesta exactamente 2|B| + 3, sea cual sea la columna;
+- la j-ésima ronda de acarreo final cuesta 2(|B| + j − 1) + 4;
+- la restauración cuesta m + 2.
+
+La suite la comprueba en todos los pares con operandos de hasta 4 bits y en 150 pares aleatorios de hasta 16 bits. Además se verificó, fuera de la suite, en los 15 876 pares con |A|, |B| ≤ 6. Como m ≤ max(|A|, |B|) + 1, el tiempo es O(n²) en la longitud n de la entrada, y el espacio es de n + max(0, m − |A|) celdas.
+
+### 13.8 Recorrido a mano: `1#1 → 10`
+
+| Paso | ID | Regla | Paso | ID | Regla |
+|---|---|---|---|---|---|
+| 0 | `[q0,B]1#1` | — | 10 | `[q6,1]o#B` | 16 |
+| 1 | `1[q1,B]#1` | 2 | 11 | `[q6,1]Bo#B` | 31 |
+| 2 | `1#[q2,B]1` | 5 | 12 | `i[q7,B]o#B` | 35 |
+| 3 | `1#1[q3,B]B` | 7 | 13 | `io[q7,B]#B` | 41 |
+| 4 | `1#[q4,B]1` | 10 | 14 | `io#[q7,B]B` | 43 |
+| 5 | `1[q5,1]#B` | 12 | 15 | `io[q4,B]#B` | 46 |
+| 6 | `[q6,1]1#B` | 22 | 16 | `i[q8,B]oBB` | 13 |
+| 7 | `o[q7,1]#B` | 34 | 17 | `[q8,B]i0BB` | 53 |
+| 8 | `o#[q7,1]B` | 49 | 18 | `[q8,B]B10BB` | 54 |
+| 9 | `o[q4,1]#B` | 52 | 19 | `[q9,B]10BB` | 57 |
+
+El recorrido sigue estos pasos:
+- Pasos 0–4: validación.
+- Paso 5: se borra el bit de B y la caché lleva 1 + 0 (`[q5,1]`).
+- Paso 7: en la columna 0, 1 + 1 = 10, así que escribe `o` y regresa con acarreo (`[q7,1]`).
+- Paso 10: B se agotó con acarreo (regla 16).
+- Paso 12: el acarreo se escribe en el blanco de la posición −1 (`i`).
+- Pasos 15–19: q4 lee `#` sin acarreo, lo borra y restaura `io` a `10`.
+
+T = 3 + 2² + 1² + 4·2 + 3 = 19.
+
+### 13.9 Cadenas de la demostración
+
+| Cadena | Operación | Salida | Columnas m | Pasos (fórmula) |
+|---|---|---|---|---|
+| `1011#0110` | 11 + 6 = 17 | `10001` | 5 | 9 + 25 + 16 + 20 + 3 = 73 |
+| `1111#0001` | 15 + 1 = 16 | `10000` | 5 | 9 + 25 + 16 + 20 + 3 = 73 |
+| `10101#10111` | 21 + 23 = 44 | `101100` | 6 | 11 + 36 + 25 + 24 + 3 = 99 |
+| `10000#00001` | 16 + 1 = 17 | `10001` | 5 | 11 + 25 + 25 + 20 + 3 = 84 |
+
+Las cuatro entradas tienen más de cinco caracteres y cubren el acarreo encadenado, el desbordamiento, la suma sin acarreo y los ceros iniciales de B.
+
+## 14. Dificultad de las máquinas
+
+La rúbrica asigna 3 puntos a la dificultad de la reconocedora y 3 a la de la alteradora, pero no define una escala. Esta sección no afirma ninguna puntuación: compara las máquinas con criterios medibles.
+
+| Criterio | Reconocedora aⁿbⁿ | Incremento | Inversión | Suma |
+|---|---|---|---|---|
+| Estados | 5 | 3 | 7 | 10 |
+| Reglas δ | 10 | 6 | 33 | 57 |
+| Marcadores en Γ \ Σ | `X`, `Y` | — | `*`, `o`, `i` | `o`, `i` (y el separador `#` de Σ) |
+| Valores de caché | B (no se usa) | B, 1 (redundante con q1) | B, 0, 1 (bit en tránsito) | B, 1, 2 (suma y acarreo) |
+| Recorridos | n rondas de ida y vuelta y una verificación | Una ida y una vuelta parcial | ⌈n/2⌉ rondas de ida y vuelta, rebobinado y restauración | Validación, m rondas de ida y vuelta y restauración |
+| Manipulación de posiciones | Marca en el lugar | Escribe en −1 al desbordarse | Intercambia extremos con un hueco | Borra B, escribe hacia la izquierda y llega a posiciones negativas |
+| Tiempo | 2n² + 2n + 1 | \|w\| + t + 2 | ⌊(n² + 6n + 6)/2⌋ | \|w\| + m² + \|B\|² + 4m + 3 |
+| Espacio | n celdas | \|w\| + 1 | n | n + max(0, m − \|A\|) |
+| Justificación | Corrección e invariante (§10.5) | Análisis del acarreo (§11.6) | Invariante de rondas (§12.6) | Invariante por columnas (§13.7) |
+| Rechaza entradas | Sí, con cinco motivos distintos | No | No | Sí, cuando no tienen la forma A#B |
+
+**Máquinas de la demostración.**
+
+- **Reconocedora: aⁿbⁿ.** Es el ejemplo que propone el propio enunciado, es correcta frente a un oráculo independiente y tiene cinco motivos de rechazo distintos. Se cita como el ejemplo 8.2 de Hopcroft et al. (2001), así que no se presenta como diseño original.
+- **Alteradora principal: la suma binaria.** Es la que más estados y reglas tiene y la única que combina validación del formato, aritmética con acarreo de tres valores en la caché, borrado de un operando y crecimiento hacia posiciones negativas. Su paso a la demostración dependía de superar todas las pruebas; las supera: todos los pares con operandos de hasta 4 bits, 150 pares aleatorios de hasta 16 bits y la fórmula de pasos ([§13.7](#137-corrección-número-de-pasos-y-espacio)).
+- **Complementarias.** El incremento binario, de la etapa anterior, y la inversión, cuyo algoritmo depende de la caché y que retoma el ejemplo «darle la vuelta a una cadena» del enunciado, se conservan para mostrar el mismo motor con otras transformaciones.
+
+Con esto se atiende la observación M-1 del Gate 02: la alteradora de la entrega anterior usaba la caché de forma redundante, y ahora hay dos alteradoras en las que la caché es indispensable.
+
+## 15. Menú interactivo
+
+`python main.py --interactive` abre un menú numérico con las cuatro máquinas. El menú no carga archivos arbitrarios: las máquinas salen de un catálogo interno de rutas conocidas, y cualquier otro YAML se ejecuta con `--machine`.
+
+### 15.1 Arquitectura del menú
+
+| Módulo | Responsabilidad | No hace |
+|---|---|---|
+| `src/cli/machine_catalog.py` | `CATALOG`: para cada máquina, la ruta de su YAML (relativa al código, no al directorio de trabajo) y los textos de presentación: objetivo, fases, papel de cada estado y marcador, uso de la caché, terminación y formato de entrada | Contener reglas δ, Q, Σ o Γ: esos datos se leen del YAML |
+| `src/cli/interactive_menu.py` | `Menu`: navegación numérica, ficha técnica, lista de cadenas de la sesión, validación de cadenas nuevas y ejecución de una cadena | Simular por su cuenta ni escribir en los YAML |
+| `src/output/machine_formatter.py` | Componentes formales, valores de caché y tabla δ por columnas; también la cabecera de `--machine` | Modificar la máquina |
+
+El menú reutiliza la misma cadena de funciones que `--machine`: `load_yaml → parse_machine → validate_machine` al abrir una máquina, y `simulate → build_trace → format_result` al ejecutar una cadena. El reporte de una cadena es idéntico en los dos modos; solo cambia el encabezado (`=== Cadena: …` en lugar de `=== Cadena k de n: …`). `tests/test_interactive.py` comprueba esa igualdad con las 16 cadenas predefinidas, y también que los estados y marcadores descritos en el catálogo sean exactamente los de cada YAML.
+
+### 15.2 Flujo de navegación
+
+```text
+Menú principal ── 1–4 ──> ficha técnica de la máquina (no simula nada)
+  │                          │
+  5: Salir                   v
+                      Submenú de la máquina
+                        1. Cadenas disponibles ── n ──> ejecuta solo esa cadena ──> vuelve a la lista
+                        │                         └─ «Regresar» ──> submenú
+                        2. Ingresar una cadena nueva ── válida ──> se agrega a la sesión y se ejecuta
+                        │                              └─ inválida ──> diagnóstico: 1. Intentar de nuevo · 2. Regresar
+                        3. Ver información de la máquina ──> ficha técnica otra vez
+                        4. Regresar al menú principal
+```
+
+La ficha técnica tiene siete partes:
+- A: nombre y archivo de la máquina;
+- B: objetivo formal;
+- C: lenguaje o transformación;
+- D: Q, Σ, Γ, q0, F, el blanco, los valores de caché y el número de reglas, leídos del YAML;
+- E: la tabla δ completa por columnas (estado, caché, lectura, estado siguiente, caché siguiente, escritura y movimiento);
+- F: el procedimiento mecanizado (fases, estados, marcadores, caché y terminación);
+- G: la condición de aceptación o la transformación completa.
+
+### 15.3 Modo `--machine` y modo `--interactive`
+
+| | `--machine ARCHIVO` | `--interactive` |
+|---|---|---|
+| Máquinas | Cualquier YAML válido | Las cuatro del catálogo |
+| Cadenas | Todas las de `simulation_strings`, en orden | Una por vez: predefinida o escrita en la terminal |
+| Cabecera | Componentes y δ en notación del enunciado | Ficha técnica con la tabla δ por columnas y la explicación del procedimiento |
+| Reporte por cadena | `format_result` completo | El mismo, más un resumen de una fila |
+| Errores | Código 1 y mensaje en la salida de errores | Diagnóstico y reintento; el menú continúa |
+| Fin | Al terminar las cadenas | «Salir», fin de la entrada (código 0) o Ctrl+C (código 130) |
+
+`--machine` e `--interactive` son excluyentes; `--max-steps N` se aplica a los dos.
+
+### 15.4 Ejecutar una cadena predefinida
+
+1. `python main.py --interactive` y elegir la máquina (por ejemplo `4`, suma binaria). Se muestra la ficha.
+2. En el submenú, `1` (Cadenas disponibles). Cada cadena aparece numerada con su origen, `[predefinida]` o `[agregada en sesión]`.
+3. Escribir el número de la cadena. Se ejecuta solo esa, con el reporte completo, y la lista vuelve a mostrarse; su última opción, «Regresar», vuelve al submenú.
+
+### 15.5 Ingresar una cadena nueva
+
+1. En el submenú, `2` (Ingresar una cadena nueva). El menú muestra la máquina, el alfabeto permitido y el formato esperado.
+2. Escribir la cadena tal cual, por ejemplo `0011` o `101#11`. Los ceros iniciales se conservan: la cadena nunca se convierte a número. En las máquinas cuyo dominio incluye ε, una línea vacía es la cadena vacía.
+3. Si es válida, se agrega a la lista de la sesión (sin duplicados) y se ejecuta de inmediato. La lista se conserva al regresar al menú principal y volver a la máquina, pero solo mientras el programa está abierto: el YAML nunca se modifica.
+
+### 15.6 Validaciones de entrada
+
+| Contexto | Entrada | Respuesta |
+|---|---|---|
+| Menú o submenú | Número de una opción (se toleran espacios alrededor) | Se ejecuta la opción |
+| Menú o submenú | Vacía, texto, `0`, fuera de rango, `1.0` | «Opción no válida» o «No escribió ninguna opción»; se vuelve a preguntar |
+| Cadena nueva | Símbolo fuera de Σ (`1021`, `10 01`) | Diagnóstico con los símbolos inválidos; reintentar o regresar |
+| Cadena nueva | Fuera del formato de la máquina | Diagnóstico con el formato esperado |
+| Cualquiera | Fin de la entrada (Ctrl+D) | «Fin de la entrada: el simulador se cierra.», código 0 |
+| Cualquiera | Ctrl+C | «Interrumpido con Ctrl+C: el simulador se cierra.», código 130, sin traza de error |
+
+Formato de cada máquina:
+
+| Máquina | Formato admitido |
+|---|---|
+| Reconocedora | Cualquier cadena sobre {a, b}, incluida ε; la máquina decide si pertenece a L |
+| Incremento | Cadena binaria no vacía |
+| Inversión | Cadena binaria, incluida ε |
+| Suma | A#B: dos números binarios no vacíos y un único `#` |
+
+Las opciones del menú y las cadenas se piden en momentos distintos, así que un `1` escrito como opción nunca se toma como la cadena binaria `1`. Una cadena que el menú no admite tampoco se presenta como rechazo: el rechazo solo lo decide la máquina al simular.
+
+### 15.7 Ejemplo real
+
+Fragmento de una sesión real en la suma binaria (opciones `4`, `2`). Después de cada prompt se muestra lo que se escribió, como aparece en la terminal:
+
+```text
+INGRESAR NUEVA CADENA
+
+Máquina: Suma binaria
+Alfabeto permitido: {#, 0, 1}
+Formato: A#B: dos números binarios no vacíos separados por un único # (p. ej. 1011#0110)
+Ingrese una cadena: 1011
+Cadena no válida: '1011' no tiene el formato esperado: A#B: dos números binarios no vacíos separados por un único # (p. ej. 1011#0110).
+
+1. Intentar de nuevo
+2. Regresar al submenú
+
+Seleccione una opción: 1
+Ingrese una cadena: 101#11
+'101#11' se agregó a la lista de esta sesión (n.º 5).
+
+Máquina: Alteradora — Suma binaria (transformer_binary_addition.yaml)
+=== Cadena: '101#11' (longitud 6) ===
+Resultado:     ACCEPTED (aceptada)
+Motivo:        alcanzó el estado final 'q9'
+Pasos:         45
+Estado final:  q9
+Caché final:   B
+Cabezal final: -1
+Cinta final:   1000
+ID final:      [q9,B]1000BBB
+
+posición -1  0  1  2  3  4  5
+cinta     1  0  0  0  B  B  B
+cabezal   ^
+
+Descripciones instantáneas (ID_0 a ID_45):
+  …
+```
+
+Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
+
+## 16. Decisiones de implementación en Python
 
 - **Cinta dispersa `dict[int, str]`.** Permite índices negativos y crecimiento hacia ambos lados sin desplazar el contenido; leer una celda ausente devuelve el blanco.
 - **Modelos inmutables.** `@dataclass(frozen=True)`, `frozenset` y `MappingProxyType` para las cintas de cada ID. Una ID histórica no puede cambiar después de registrarse, así que la traza nunca muestra referencias a la cinta final.
@@ -598,15 +1118,29 @@ Si el equipo decide reforzar este rubro, la alternativa es agregar una máquina 
 - **Traza verificada.** `build_trace` comprueba cada paso contra su regla; los formateadores solo convierten texto.
 - **Blanco sin ambigüedad.** `blank_glyph` usa `B`, como los laboratorios, salvo que la máquina use `B` como símbolo o valor de caché; entonces busca el primer carácter libre desde `□`.
 - **Salida en UTF-8.** `main.py` reconfigura `stdout` y `stderr` a UTF-8 para imprimir δ, ⊢ y ε también en consolas de Windows o con la salida redirigida.
-- **Solo biblioteca estándar más PyYAML.** `argparse` para la CLI; `pytest` solo para las pruebas.
+- **Catálogo separado del menú.** `src/cli/machine_catalog.py` solo contiene rutas y textos; la definición formal y δ siempre se leen del YAML, así que una corrección en el YAML se refleja en la ficha sin tocar Python.
+- **Un solo formateador de máquinas.** `describe_machine` pasó de `main.py` a `src/output/machine_formatter.py` para que la CLI y el menú usen el mismo código; la salida de `--machine` no cambió (lo comprueba la evidencia de `docs/evidence/`).
+- **Entrada inyectable.** `run_menu(read, out)` recibe la función de lectura y el flujo de salida; las pruebas usan un teclado simulado y comparan el texto sin depender de una terminal real.
+- **Solo biblioteca estándar más PyYAML.** `argparse` para la CLI; `re`, `textwrap` y `dataclasses` para el menú; `pytest` solo para las pruebas.
 
-## 14. Estrategia de validación
+## 17. Estrategia de validación
 
-1. **Oráculos independientes del simulador.** La pertenencia a {aⁿbⁿ} se calcula con su definición y el sucesor binario con `int(w, 2) + 1`; ninguno usa el motor.
-2. **Pruebas exhaustivas.** Todas las cadenas sobre {a, b} de longitud ≤ 10 (2047) en la reconocedora y todas las binarias de longitud 1 a 10 (2046) en la alteradora, a nivel de biblioteca. A nivel de CLI, en un proceso aparte, todas las de longitud 0 a 8 sobre {a, b} (511) y 1 a 9 binarias (1022).
+1. **Oráculos independientes del simulador.** Ninguno usa el motor y solo existen en las pruebas:
+   - la pertenencia a {aⁿbⁿ} se calcula con su definición;
+   - el sucesor binario, con `int(w, 2) + 1`;
+   - la inversa, con `w[::-1]`;
+   - la suma, con `int(A, 2) + int(B, 2)` y el ancho de la política de salida.
+2. **Pruebas exhaustivas.** A nivel de biblioteca:
+   - todas las cadenas sobre {a, b} de longitud ≤ 10 (2047) en la reconocedora;
+   - todas las binarias de longitud 1 a 10 (2046) en el incremento;
+   - todas las de longitud 0 a 10 (2047) en la inversión;
+   - todos los pares A#B con operandos de 1 a 4 bits (900) en la suma, más 150 pares aleatorios de hasta 16 bits con semilla fija.
+
+   A nivel de CLI, en un proceso aparte, todas las de longitud 0 a 8 sobre {a, b} (511) y las binarias de longitud 1 a 9 (1022).
 3. **Reproducción de δ desde el YAML.** Para las ocho cadenas de la demostración, cada ID_k+1 se recalcula a partir de ID_k con la δ leída directamente del archivo con `yaml.safe_load`, sin el parser ni el motor del proyecto.
-4. **Fórmulas cerradas.** Los pasos reales se comparan con T(n) = 2n² + 2n + 1 y T(w) = |w| + t + 2.
-5. **Equivalencia con los laboratorios.** Los resultados resueltos a mano se usan como oráculos:
+4. **Fórmulas cerradas.** Los pasos reales se comparan con T(n) = 2n² + 2n + 1, T(w) = |w| + t + 2 y, en la inversión, con T(n) = ⌊(n² + 6n + 6)/2⌋.
+5. **Invariantes.** En la inversión, cada visita a q0 se compara con el invariante de rondas (§12.6). En la suma, la caché al entrar a q6 se compara con la suma b_k + acarreo_k de cada columna calculada aparte.
+6. **Equivalencia con los laboratorios.** Los resultados resueltos a mano se usan como oráculos:
 
 | Laboratorio | Entrada | Resultado a mano | Simulador |
 |---|---|---|---|
@@ -616,16 +1150,27 @@ Si el equipo decide reforzar este rubro, la alternativa es agregar una máquina 
 | 9, ej. 2 b) | `10011` | 9 pasos, `101 q_halt 00` | 9 transiciones, cinta `10100` |
 | 9, ej. 2 c) | `11` | 6 pasos, `q_halt BB00` | 6 transiciones, cinta `00`, cabezal −2 |
 
-6. **Casos límite.** Cinta vacía, cabezal en posiciones negativas, estado final con reglas salientes, máquina sin reglas, detención exacta en `max_steps`, cadenas fuera de Σ, YAML inválido, claves repetidas y símbolos Unicode.
-7. **Independencia.** Las mismas cadenas en otro orden, repetidas o intercaladas con otras producen reportes idénticos.
+7. **Casos límite.** Se cubren:
+   - cinta vacía y cabezal en posiciones negativas;
+   - estado final con reglas salientes y máquina sin reglas;
+   - detención exacta en `max_steps`;
+   - cadenas fuera de Σ, YAML inválido, claves repetidas y símbolos Unicode;
+   - cadenas de Σ\* sin la forma A#B (rechazadas con la cinta intacta) y ε en la inversión.
+8. **Independencia.** Las mismas cadenas en otro orden, repetidas o intercaladas con otras producen reportes idénticos. En el menú, las cadenas de una máquina no aparecen en otra.
+9. **Equivalencia entre modos.** Cada cadena predefinida de las cuatro máquinas, ejecutada desde el menú, produce el mismo reporte que `--machine`.
+10. **Mutaciones.** En copias temporales se alteraron:
+    - reglas de los YAML nuevos: escrituras, destinos, la regla de ε y un segundo `#` admitido;
+    - el menú: sin sesiones, sin validación del formato y con IDs recortadas.
 
-## 15. Pruebas automatizadas
+    En cada caso fallaron pruebas, así que las pruebas detectan esos defectos.
+
+## 18. Pruebas automatizadas
 
 ```bash
 python -m pytest -q
 ```
 
-Resultado de la ejecución final en Fedora 43 con Python 3.14.6: **349 pruebas aprobadas, 0 fallidas, 0 omitidas**. La misma cifra se obtuvo en un entorno virtual nuevo instalado solo con `requirements.txt` a partir de `git archive`.
+Resultado en Fedora 43 con Python 3.14.6: **480 pruebas aprobadas, 0 fallidas, 0 omitidas** (349 antes de la ampliación).
 
 | Archivo | Pruebas | Contenido |
 |---|---:|---|
@@ -643,10 +1188,13 @@ Resultado de la ejecución final en Fedora 43 con Python 3.14.6: **349 pruebas a
 | `test_result_formatter.py` | 11 | Reporte y resumen; `LIMIT_EXCEEDED` nunca como rechazo |
 | `test_cli.py` | 30 | Argumentos, errores, tabla δ en la cabecera, salida de ambas máquinas |
 | `test_recognizer.py` | 37 | Demostración, recorridos a mano, fórmula de pasos, exhaustiva ≤ 10 |
-| `test_transformer.py` | 25 | Demostración, desbordamiento en −1, caché, exhaustiva 1–10 |
+| `test_transformer.py` | 25 | Incremento: demostración, desbordamiento en −1, caché, exhaustiva 1–10 |
+| `test_reverse.py` | 29 | Inversión: demostración, palíndromos, ceros, paridad, ε, invariante de rondas, caché, exhaustiva 0–10, fórmula de pasos |
+| `test_addition.py` | 42 | Suma: demostración, acarreo, desbordamiento, cero, ceros iniciales, formatos mal formados, símbolos fuera de Σ, exhaustiva ≤ 4 bits, aleatoria ≤ 16 bits, caché por columna, recorrido de `1#1` |
+| `test_interactive.py` | 60 | Menú: navegación, opciones inválidas, ficha técnica, ejecución individual igual a `--machine`, cadenas nuevas, validación, sesión, EOF, Ctrl+C, otro directorio de trabajo, catálogo frente al YAML |
 | `test_integration.py` | 35 | Extremo a extremo por proceso aparte, oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada, evidencia de `docs/evidence/` |
 
-## 16. Instalación y ejecución
+## 19. Instalación y ejecución
 
 Requisitos: Python 3.10 o superior (el código usa la sintaxis `X | None`) y PyYAML. El proyecto se probó con Python 3.14.6 en Fedora 43 y, en el Gate 02, con Python 3.14.3 en Windows 11; no se probó en las versiones 3.10 a 3.13.
 
@@ -657,15 +1205,19 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pytest -q
+python main.py --interactive
 python main.py --machine machines/recognizer_anbn.yaml
+python main.py --machine machines/transformer_binary_addition.yaml
 python main.py --machine machines/transformer_binary_increment.yaml
+python main.py --machine machines/transformer_binary_reverse.yaml
 ```
 
 **Windows (PowerShell):** los mismos comandos, creando el entorno con `py -m venv .venv` y activándolo con `.venv\Scripts\Activate.ps1`. La instalación con `requirements.txt` y la suite se ejecutaron en Windows en el Gate 02; los comandos de activación del entorno no se volvieron a verificar en Windows.
 
 | Argumento | Obligatorio | Descripción |
 |---|---|---|
-| `--machine ARCHIVO` | Sí | Archivo YAML con la máquina y su lista `simulation_strings` |
+| `--machine ARCHIVO` | Uno de los dos | Archivo YAML con la máquina; simula todas sus `simulation_strings` |
+| `--interactive` | Uno de los dos | Menú numérico con las cuatro máquinas ([§15](#15-menú-interactivo)) |
 | `--max-steps N` | No | Máximo de transiciones por cadena (entero positivo; por defecto 10000) |
 
 Otros ejemplos:
@@ -676,7 +1228,7 @@ python main.py --machine machines/recognizer_anbn.yaml --max-steps 30      # mue
 python main.py --help
 ```
 
-La salida estándar contiene, en este orden:
+Con `--machine`, la salida estándar contiene, en este orden:
 
 1. la descripción formal de la máquina (Q, Σ, Γ, q0, F, blanco) y la tabla δ completa, numerada en el orden del YAML;
 2. por cada cadena: encabezado con la cadena y su longitud; `Resultado` (`ACCEPTED`, `REJECTED` o `LIMIT_EXCEEDED`) y `Motivo`; pasos, estado, caché y cabezal finales; `Cinta final`; `ID final`; vista de la cinta por posiciones con el cabezal; y la tabla completa «Paso | ID | Transición aplicada», de ID_0 a ID_n;
@@ -684,13 +1236,14 @@ La salida estándar contiene, en este orden:
 
 | Código de salida | Significado |
 |---|---|
-| 0 | Todas las cadenas se simularon (aceptadas, rechazadas o detenidas por el límite) |
+| 0 | Todas las cadenas se simularon (aceptadas, rechazadas o detenidas por el límite), o el menú se cerró con «Salir» o al terminar la entrada |
 | 1 | El archivo no se pudo leer o la máquina no es válida; el detalle va a la salida de errores |
-| 2 | Argumentos incorrectos |
+| 2 | Argumentos incorrectos (por ejemplo, ninguno de los dos modos, o los dos a la vez) |
+| 130 | El menú se interrumpió con Ctrl+C |
 
-## 17. Resultados de la demostración
+## 20. Resultados de la demostración
 
-Salida real de `python main.py --machine machines/recognizer_anbn.yaml` y `python main.py --machine machines/transformer_binary_increment.yaml` en la ejecución final. Coincide con los valores esperados de [§10.7](#107-cadenas-de-la-demostración) y [§11.9](#119-cadenas-de-la-demostración), y con los oráculos independientes.
+Salida real de `python main.py --machine` con los cuatro archivos de `machines/`, guardada en `docs/evidence/`. Coincide con los valores esperados de [§10.7](#107-cadenas-de-la-demostración), [§11.9](#119-cadenas-de-la-demostración), [§12.8](#128-cadenas-de-la-demostración) y [§13.9](#139-cadenas-de-la-demostración), y con los oráculos independientes. Desde el menú, cada cadena produce el mismo reporte.
 
 | Máquina | Cadena | Longitud | Resultado | Pasos | Cinta final | ID final |
 |---|---|---|---|---|---|---|
@@ -698,21 +1251,29 @@ Salida real de `python main.py --machine machines/recognizer_anbn.yaml` y `pytho
 | Reconocedora | `aaaabbbb` | 8 | ACCEPTED | 41 | `XXXXYYYY` | `XXXXYYYYB[q4,B]B` |
 | Reconocedora | `aaabb` | 5 | REJECTED | 17 | `XXXYY` | `XXXYY[q1,B]B` |
 | Reconocedora | `aabbbb` | 6 | REJECTED | 12 | `XXYYbb` | `XXYY[q3,B]bb` |
-| Alteradora | `10101` | 5 | ACCEPTED | 8 | `10110` | `101[q2,B]10` |
-| Alteradora | `11011` | 5 | ACCEPTED | 9 | `11100` | `11[q2,B]100` |
-| Alteradora | `11111` | 5 | ACCEPTED | 12 | `100000` | `[q2,B]100000` |
-| Alteradora | `10000` | 5 | ACCEPTED | 7 | `10001` | `1000[q2,B]1` |
+| Suma (principal) | `1011#0110` | 9 | ACCEPTED | 73 | `10001` | `[q9,B]10001BBBBB` |
+| Suma (principal) | `1111#0001` | 9 | ACCEPTED | 73 | `10000` | `[q9,B]10000BBBBB` |
+| Suma (principal) | `10101#10111` | 11 | ACCEPTED | 99 | `101100` | `[q9,B]101100BBBBBB` |
+| Suma (principal) | `10000#00001` | 11 | ACCEPTED | 84 | `10001` | `[q9,B]10001BBBBBB` |
+| Incremento | `10101` | 5 | ACCEPTED | 8 | `10110` | `101[q2,B]10` |
+| Incremento | `11011` | 5 | ACCEPTED | 9 | `11100` | `11[q2,B]100` |
+| Incremento | `11111` | 5 | ACCEPTED | 12 | `100000` | `[q2,B]100000` |
+| Incremento | `10000` | 5 | ACCEPTED | 7 | `10001` | `1000[q2,B]1` |
+| Inversión | `10110` | 5 | ACCEPTED | 30 | `01101` | `01101[q6,B]B` |
+| Inversión | `11001` | 5 | ACCEPTED | 30 | `10011` | `10011[q6,B]B` |
+| Inversión | `10000` | 5 | ACCEPTED | 30 | `00001` | `00001[q6,B]B` |
+| Inversión | `11100` | 5 | ACCEPTED | 30 | `00111` | `00111[q6,B]B` |
 
 Motivos de los rechazos:
 
 - `aaabb`: «no hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final» (falta una `b`).
 - `aabbbb`: «no hay regla para el estado 'q3' con caché el blanco leyendo 'b', y 'q3' no es final» (sobran `b`).
 
-En la alteradora, `ACCEPTED` significa que la máquina se detuvo normalmente en su estado final q2; el resultado de la transformación es la columna «Cinta final».
+En las alteradoras, `ACCEPTED` significa que la máquina se detuvo normalmente en su estado final; el resultado de la transformación es la columna «Cinta final». En la suma, la ID final muestra como `B` las celdas donde estaban `#` y B, porque el rango visible incluye toda la zona de la entrada; la cinta final contiene solo el resultado.
 
-## 18. Ejemplo completo
+## 21. Ejemplo completo
 
-Salida real de la alteradora: la cabecera y el reporte de la tercera cadena, `11111` (las otras tres cadenas y el resumen se omiten aquí).
+Salida real del incremento binario: la cabecera y el reporte de la tercera cadena, `11111` (las otras tres cadenas y el resumen se omiten aquí). Las salidas completas de las cuatro máquinas están en `docs/evidence/`.
 
 ```text
 Máquina: machines/transformer_binary_increment.yaml
@@ -764,7 +1325,7 @@ Descripciones instantáneas (ID_0 a ID_12):
 
 La caché vale `1` mientras se propaga el acarreo (`[q1,1]`) y B al terminar (`[q2,B]`). La vista por posiciones muestra el índice −1 del bit nuevo.
 
-## 19. Discusión
+## 22. Discusión
 
 ### Obstáculos encontrados
 
@@ -774,25 +1335,35 @@ La caché vale `1` mientras se propaga el acarreo (`[q1,1]`) y B al terminar (`[
 - **Detención exactamente en el límite.** Una primera versión del motor comprobaba el límite antes de buscar la regla, de modo que una máquina que se detenía sin regla justo tras `max_steps` transiciones se reportaba como `LIMIT_EXCEEDED`. Se corrigió en el Gate 01 (`093dffd`) y hay pruebas de esa frontera a nivel de motor y de CLI.
 - **Portabilidad de las pruebas.** En Windows, `chmod(0)` no quita el permiso de lectura; la prueba de archivo ilegible se omite solo donde eso ocurre (`d43e572`).
 - **Visibilidad de δ y blanco ambiguo.** La CLI mostraba solo el número de reglas y el glifo alternativo del blanco no se comparaba con Γ. Ambos se corrigieron en el Gate 03 (C24).
+- **Invertir con un solo valor de caché.** La caché guarda un solo símbolo, pero un intercambio necesita dos. Se resolvió con un hueco `*`: el bit de la izquierda viaja en la caché, en el extremo derecho se cambia por el bit que había y ese bit regresa en la caché a llenar el hueco.
+- **Sumar operandos de distinta longitud.** Rellenar con ceros o desplazar el operando corto habría exigido muchas más reglas. Bastó con tratar el blanco a la izquierda de A como un 0: el resultado crece hacia posiciones negativas, que la cinta dispersa admite.
+- **Formato frente a rechazo.** En la suma se separó la validación del formato (q0–q3, sin escribir nada) del cálculo, para que una cadena mal formada se rechace sin dejar una cinta a medio calcular. El menú, además, no admite esas cadenas, para no presentar como rechazo un error de captura.
+- **Menú sin un segundo formateador.** La ficha y los reportes reutilizan `src/output/`; la única pieza nueva de presentación es la tabla δ por columnas. Separar el contexto de navegación del de captura evita que un `1` escrito como opción se tome como una cadena.
 
 ### Recomendaciones
 
 - Definir siempre el blanco con una entrada vacía y entrecomillar los símbolos numéricos (`'0'`, `'1'`).
 - Usar `--max-steps` bajo para explorar máquinas nuevas: un `LIMIT_EXCEEDED` indica que la máquina aún tenía reglas aplicables, no que rechace.
-- Revisar la tabla δ impresa en la cabecera antes de leer las trazas: es exactamente la que ejecuta el motor.
+- Revisar la tabla δ impresa en la cabecera, o en la ficha del menú, antes de leer las trazas: es exactamente la que ejecuta el motor.
+- Para explorar una máquina, usar el menú e ingresar cadenas cortas; las trazas crecen de forma cuadrática.
 
-## 20. Limitaciones y alcance
+## 23. Limitaciones y alcance
 
 - Solo MT deterministas de una cinta. No hay multicinta ni no determinismo.
 - Los estados finales son terminales: las reglas que salen de F se aceptan en el archivo, pero nunca se ejecutan.
 - Cada símbolo de Σ y Γ es un único carácter. La caché admite cualquier cadena no vacía, pero no se valida contra Γ porque ninguna fuente lo exige.
 - La tupla de control se escribe `[q,c]` sin escapar sus componentes: un estado o un valor de caché con `[`, `,` o `]` haría ambigua la ID. El validador no lo prohíbe; ninguna de las máquinas del proyecto usa esos caracteres.
 - La cota por defecto es de 10 000 transiciones por cadena. Las trazas largas se imprimen completas (la reconocedora crece como 2n² + 2n + 1).
-- La alteradora está diseñada para cadenas binarias no vacías (con ε produce `1`) y se detiene sobre el último bit modificado, sin regresar el cabezal al inicio.
-- La rúbrica no define cómo se mide la dificultad de una máquina ([§12](#12-dificultad-de-las-máquinas)).
+- El incremento binario está diseñado para cadenas binarias no vacías (con ε produce `1`) y se detiene sobre el último bit modificado, sin regresar el cabezal al inicio.
+- La suma conserva los ceros iniciales hasta max(|A|, |B|) bits: `0001#0010` produce `0011`, no `11`. Su ID final muestra como blancos las celdas que ocupaban `#` y B.
+- Las trazas de la inversión y de la suma crecen como O(n²): sumar dos números de 16 bits toma unos 600 pasos, y todas las IDs se imprimen.
+- El menú solo ofrece las cuatro máquinas del catálogo; cualquier otro YAML se ejecuta con `--machine`. Las cadenas agregadas en el menú se pierden al cerrar el programa, porque no se escriben en el YAML.
+- El formato que exige el menú ([§15.6](#156-validaciones-de-entrada)) se declara en el catálogo. Para ver a la suma rechazar una cadena mal formada, esa cadena debe estar en `simulation_strings` y ejecutarse con `--machine`.
+- La prueba de Ctrl+C con una señal real se omite en Windows, y el menú no se probó en Windows.
+- La rúbrica no define cómo se mide la dificultad de una máquina ([§14](#14-dificultad-de-las-máquinas)).
 - Probado con Python 3.14; las versiones 3.10 a 3.13 no se probaron.
 
-## 21. Organización del proyecto
+## 24. Organización del proyecto
 
 ```text
 proyecto3-toc/
@@ -800,70 +1371,103 @@ proyecto3-toc/
 ├── main.py                        CLI
 ├── requirements.txt               PyYAML, pytest
 ├── machines/
-│   ├── recognizer_anbn.yaml       MT reconocedora (§10)
-│   ├── transformer_binary_increment.yaml   MT alteradora (§11)
+│   ├── recognizer_anbn.yaml                MT reconocedora (§10)
+│   ├── transformer_binary_increment.yaml   MT alteradora: incremento (§11)
+│   ├── transformer_binary_reverse.yaml     MT alteradora: inversión (§12)
+│   ├── transformer_binary_addition.yaml    MT alteradora: suma, principal (§13)
 │   └── examples/basic_machine.yaml         máquina del Laboratorio 10
 ├── src/
 │   ├── input/                     errors, yaml_loader, machine_parser, machine_validator
 │   ├── model/                     transition, turing_machine, tape, configuration, simulation_result
 │   ├── simulator/                 step, engine, trace
-│   ├── output/                    id_formatter, tape_formatter, result_formatter
+│   ├── output/                    id_formatter, tape_formatter, result_formatter, machine_formatter
+│   ├── cli/                       machine_catalog, interactive_menu (§15)
 │   └── utils/notation.py          blanco, tupla de control y reglas de δ
-├── tests/                         16 archivos de pruebas y fixtures/statement_example_mt_1.yaml
+├── tests/                         19 archivos de pruebas y fixtures/statement_example_mt_1.yaml
 └── docs/
-    ├── evidence/                  salida real de las dos demostraciones (§22.1)
-    ├── handoff_gate_01_derek.md   entrega del Gate 01 al Gate 02
-    └── handoff_gate_02_vernel.md  entrega del Gate 02 al Gate 03
+    └── evidence/                  salida real de las cuatro demostraciones (§25.1)
 ```
 
-Cada módulo incluye docstrings con su propósito y la propiedad formal que implementa. Los traspasos de `docs/` son registros de las entregas entre integrantes; el contenido técnico que antes estaba en `docs/architecture.md`, `docs/methodology.md` y `docs/test_cases.md` está integrado en este README.
+Cada módulo incluye docstrings con su propósito y la propiedad formal que implementa. Este README es el único documento técnico del proyecto, por dos razones:
+- El contenido que antes estaba en `docs/architecture.md`, `docs/methodology.md` y `docs/test_cases.md` se integró en él durante el Gate 03.
+- Los registros de traspaso entre etapas (`docs/handoff_gate_01_derek.md` y `docs/handoff_gate_02_vernel.md`) se integraron en la ampliación: los SHA de cada etapa están en §26, la guía para escribir máquinas en §7.7 y las notas de la interfaz pública en §6.
 
-## 22. Demostración y video
+Los archivos retirados siguen en el historial de Git, por ejemplo `git show 6a27bab:docs/handoff_gate_01_derek.md`.
 
-### 22.1 Evidencia en el repositorio
+## 25. Demostración y video
 
-`docs/evidence/recognizer_anbn.txt` y `docs/evidence/transformer_binary_increment.txt` contienen la salida completa y real de los dos comandos de la demostración: la cabecera con la tabla δ, las cuatro cadenas con todas sus IDs y el resumen. `tests/test_integration.py` vuelve a ejecutar la CLI y comprueba que coincidan carácter por carácter, así que no pueden quedar desactualizados. Para regenerarlos, desde la raíz:
+### 25.1 Evidencia en el repositorio
+
+`docs/evidence/` contiene la salida completa y real de `--machine` para las cuatro máquinas: la cabecera con la tabla δ, las cuatro cadenas de cada una con todas sus IDs y el resumen. Los archivos son:
+- `recognizer_anbn.txt`
+- `transformer_binary_addition.txt`
+- `transformer_binary_increment.txt`
+- `transformer_binary_reverse.txt`
+
+`tests/test_integration.py` vuelve a ejecutar la CLI y comprueba que la salida coincida carácter por carácter con los archivos de las máquinas que cubre. Para regenerarlos, desde la raíz y en Linux:
 
 ```bash
-python main.py --machine machines/recognizer_anbn.yaml > docs/evidence/recognizer_anbn.txt
-python main.py --machine machines/transformer_binary_increment.yaml > docs/evidence/transformer_binary_increment.txt
+for m in recognizer_anbn transformer_binary_addition transformer_binary_increment transformer_binary_reverse; do
+    python main.py --machine machines/$m.yaml > docs/evidence/$m.txt
+done
 ```
 
-### 22.2 Guion del video
+### 25.2 Guion del video
 
-| Parte | Qué mostrar | Material | Rubro |
-|---|---|---|---|
-| 1. Presentación | Proyecto, integrantes y objetivo: simulador de MT de una cinta configurado con YAML | [§1](#1-objetivo-del-proyecto) | — |
-| 2. Arquitectura | `main.py` → entrada → modelo → simulador → traza → salida; cinta dispersa, IDs inmutables, traza verificada | [§5](#5-arquitectura), [§6](#6-modelo-de-datos), [§8](#8-motor-de-simulación-y-condiciones-de-parada) | Arquitectura (1) |
-| 3. Contrato YAML | Claves del enunciado, `mem_cache_value` dentro de [q, c], blanco = entrada vacía | [§7](#7-contrato-yaml) | — |
-| 4. Reconocedora | Tabla δ completa (cabecera de la salida) y estrategia de marcar, buscar y regresar | [§10](#10-máquina-reconocedora) | Dificultad (3) |
-| 5. Ejecución | `aaabbb` y `aaaabbbb` aceptadas; `aaabb` y `aabbbb` rechazadas, con su longitud, sus IDs y el motivo | [§17](#17-resultados-de-la-demostración) | Aceptadas (2), rechazadas (2) |
-| 6. Alteradora | Tabla δ, acarreo en la caché y desbordamiento a la posición −1 | [§11](#11-máquina-alteradora) | Dificultad (3) |
-| 7. Ejecución | `10101 → 10110`, `11011 → 11100`, `11111 → 100000`, `10000 → 10001`; la cinta final nunca queda en blanco | [§17](#17-resultados-de-la-demostración), [§18](#18-ejemplo-completo) | Cuatro cadenas (4) |
-| 8. Motor único | Las dos máquinas son solo YAML; el código de Python no conoce ninguna | [§5](#5-arquitectura) | Arquitectura (1) |
-| 9. Verificación y límites | `python -m pytest -q`, oráculos y limitaciones reales | [§14](#14-estrategia-de-validación), [§20](#20-limitaciones-y-alcance) | — |
+La demostración principal se hace en una sola sesión de `python main.py --interactive`, con la reconocedora aⁿbⁿ y la suma binaria. Las otras dos alteradoras son evidencia complementaria si el tiempo lo permite; no deben desplazar las ocho ejecuciones obligatorias.
 
-Comandos de la grabación, verificados en Fedora:
+| Parte | Qué mostrar | Cómo | Material | Rubro |
+|---|---|---|---|---|
+| 1. Presentación | Proyecto, integrantes y objetivo | Este README | [§1](#1-objetivo-del-proyecto) | — |
+| 2. Arquitectura | Un solo motor genérico: entrada → modelo → simulador → traza → salida; la CLI y el menú usan las mismas funciones | Diagrama de [§5](#5-arquitectura) | [§5](#5-arquitectura), [§15.1](#151-arquitectura-del-menú) | Arquitectura (1) |
+| 3. Formato YAML | Claves del enunciado, caché dentro de [q, c], blanco = entrada vacía | Abrir `machines/transformer_binary_addition.yaml` | [§7](#7-contrato-yaml) | — |
+| 4. Menú | Las cuatro máquinas; al elegir una solo se muestra su ficha | `python main.py --interactive` | [§15](#15-menú-interactivo) | — |
+| 5. Reconocedora | Ficha: Q, Γ, tabla δ y fases de marcar, buscar, regresar y comprobar | `1` | [§10](#10-máquina-reconocedora) | Dificultad (3) |
+| 6. Dos aceptadas | `aaabbb` (25 pasos) y `aaaabbbb` (41 pasos), con todas sus IDs | `1` (Cadenas disponibles), `1`, `2` | [§20](#20-resultados-de-la-demostración) | Aceptadas (2) |
+| 7. Dos rechazadas | `aaabb` y `aabbbb`, con el motivo y la clave sin regla | `3`, `4`; luego `5` (Regresar) y `4` (menú principal) | [§10.4](#104-tabla-de-transiciones) | No aceptadas (2) |
+| 8. Alteradora principal | Ficha de la suma: validación, caché con la suma (B, 1, 2) y el acarreo, marcas `o`/`i` | `4` | [§13](#13-máquina-alteradora-suma-binaria) | Dificultad (3) |
+| 9. Cuatro transformaciones | `1011#0110 → 10001`, `1111#0001 → 10000`, `10101#10111 → 101100`, `10000#00001 → 10001` | `1`, luego `1`, `2`, `3` y `4` | [§13.9](#139-cadenas-de-la-demostración) | Cuatro cadenas (4) |
+| 10. Tabla δ e IDs | En una traza: la fila k muestra la regla que transformó ID_k−1; `[q5,2]` lleva una suma de 2; el resultado crece hacia la posición −1 | Sobre la traza anterior | [§9](#9-descripciones-instantáneas), [§13.8](#138-recorrido-a-mano-11--10) | Arquitectura (1), dificultad (3) |
+| 11. Entradas nuevas | Diagnóstico de `1011` (sin `#`) y ejecución de `101#11 → 1000` | `5` (Regresar), `2`, `1011`, `1`, `101#11` | [§15.5](#155-ingresar-una-cadena-nueva)–[§15.7](#157-ejemplo-real) | — |
+| 12. Conclusión | `python -m pytest -q`, oráculos independientes y limitaciones reales; si hay tiempo, inversión e incremento | `4`, `5` (Salir) | [§17](#17-estrategia-de-validación), [§18](#18-pruebas-automatizadas), [§23](#23-limitaciones-y-alcance) | — |
+
+Secuencia completa de teclas de las partes 4 a 12:
+
+```text
+1  1  1 2 3 4  5  4  4  1  1 2 3 4  5  2  1011  1  101#11  4  5
+```
+
+La secuencia se verificó en Fedora con la entrada redirigida desde un archivo. Produce exactamente las ocho ejecuciones obligatorias (`aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas; las cuatro sumas) y la de `101#11`, y termina con «Hasta luego.». Ninguna cadena obligatoria necesita escribirse en vivo: las ocho están en `simulation_strings`. Comandos alternativos, sin menú:
 
 ```bash
 python -m pytest -q
 python main.py --machine machines/recognizer_anbn.yaml
-python main.py --machine machines/transformer_binary_increment.yaml
+python main.py --machine machines/transformer_binary_addition.yaml
 ```
 
-Ninguna cadena necesita editarse en vivo: los dos archivos YAML ya contienen en `simulation_strings` exactamente las cuatro cadenas de cada demostración, todas de longitud ≥ 5.
+## 26. Desarrollo y autoría
 
-## 23. Desarrollo y autoría
+El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull requests. Primero hubo tres etapas consecutivas (Gates) y después una ampliación. Cada integrante publicó solo durante su etapa y entregó a la siguiente el SHA final, los resultados de las pruebas y las interfaces públicas.
 
-El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull requests, en tres etapas consecutivas (Gates). Cada integrante publicó solo durante su etapa y entregó a la siguiente el SHA final, los resultados de las pruebas y las interfaces públicas.
-
-| Gate | Responsable | Commits | Contenido |
+| Etapa | Responsable | Commits | Contenido |
 |---|---|---|---|
-| 01 | Vernel | C01–C09, 3 correcciones y el traspaso | Estructura, modelo, cinta, δ, carga y validación del YAML, paso atómico y motor |
-| 02 | Derek | C10–C22, 1 corrección y el traspaso | Traza, formateadores de IDs, cinta y resultados, CLI, las dos máquinas, sus pruebas y su documentación |
-| 03 | Vernel | C23–C26 | Pruebas de integración, observaciones del Gate 02, este README y la evidencia de entrega |
+| Gate 01 | Vernel | C01–C09, 3 correcciones y el traspaso | Estructura, modelo, cinta, δ, carga y validación del YAML, paso atómico y motor |
+| Gate 02 | Derek | C10–C22, 1 corrección y el traspaso | Traza, formateadores de IDs, cinta y resultados, CLI, la reconocedora y el incremento binario, sus pruebas y su documentación |
+| Gate 03 | Vernel | C23–C26 | Pruebas de integración, observaciones del Gate 02, README y evidencia de entrega |
+| Ampliación | Vernel | C27–C32 | Inversión y suma binaria, menú interactivo, sus pruebas, este README y la validación integral |
 
-## 24. Referencias bibliográficas
+Commits de cada etapa (los autores se pueden comprobar con `git log --format='%h %an %s'`):
+
+| Etapa | Commits |
+|---|---|
+| Gate 01 | C01 `2a56d90`, C02 `8227c3d`, C03 `0cfbb86`, C04 `0dbecc2`, C05 `12427b2`, C06 `7f7cecf`, C07 `41811b1`, C08 `cd73751`, C09 `5bf9feb`; correcciones `aadce5f` (`.gitignore` anclado a la raíz), `1065521` (claves repetidas y escalares inválidos) y `093dffd` (detención exacta en el límite); traspaso `d818cfb` |
+| Gate 02 | Corrección `d43e572` (prueba de archivo ilegible en Windows); C10 `992da7e`, C11 `095e49b`, C12 `d2b025a`, C13 `85febb4`, C14 `6ac71da`, C15 `33873e7`, C16 `a64e304`, C17 `862a810`, C18 `c7ef952`, C19 `a584f5f`, C20 `1e14611`, C21 `3b017a5`, C22 `5af9c73`; traspaso `78d73b5` |
+| Gate 03 | C23 `dca24dd`, C24 `38912b9`, C25 `7de8b46`, C26 `6a27bab` |
+| Ampliación | C27 `ce9239b` (inversión), C28 `66ef3e5` (suma), C29 `e49b023` (menú), C30 `d3db61e` (pruebas del menú); C31 (este README) y C32 (validación integral) en `git log` |
+
+Al cerrar el Gate 02, la suite se ejecutó en Windows 11 con Python 3.14.3: 310 pruebas aprobadas y 1 omitida, la de archivo ilegible, por la razón descrita en [§22](#22-discusión).
+
+## 27. Referencias bibliográficas
 
 ### Enunciado del curso (fuente normativa)
 

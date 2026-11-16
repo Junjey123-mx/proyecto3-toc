@@ -1,5 +1,6 @@
 ---
 # Máquina alteradora: inversión de cadenas binarias, f(w) = w^R (los bits de w en orden inverso).
+# Diseño formal, tabla de transiciones, corrección y recorrido en README.md (sección 12).
 # Intercambia los extremos aún sin procesar: toma el bit de la izquierda en la caché, deja un
 # hueco '*', lleva el bit hasta el extremo derecho sin procesar, lo cambia por el bit que encuentra
 # (que pasa a la caché) y regresa a llenar el hueco. Los bits ya colocados se marcan con 'o' (0) e

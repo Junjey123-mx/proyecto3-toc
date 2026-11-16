@@ -1,5 +1,6 @@
 ---
 # Máquina alteradora: suma binaria, f(A#B) = A + B en binario.
+# Diseño formal, tabla de transiciones, corrección y recorrido en README.md (sección 13).
 # Una primera pasada comprueba el formato A#B (A y B binarios no vacíos, un solo '#'). Después,
 # en cada ronda toma el último bit de B (y lo borra), lleva en la caché la suma bit + acarreo
 # hasta la columna correspondiente de A, escribe ahí el bit del resultado marcado ('o' = 0,
