@@ -65,6 +65,9 @@ def check_sum(machine, a, b):
     assert set(trace.final.tape.values()) <= {"0", "1"}, (a, b)
     # Región de salida contigua: termina donde terminaba A y crece hacia la izquierda.
     assert sorted(trace.final.tape) == list(range(len(a) - len(result), len(a))), (a, b)
+    # Pasos (README.md, §13.7): T = |A#B| + m² + |B|² + 4m + 3, con m columnas procesadas.
+    m = len(column_sums(a, b))
+    assert trace.steps == len(a) + len(b) + 1 + m * m + len(b) ** 2 + 4 * m + 3, (a, b)
     return trace
 
 

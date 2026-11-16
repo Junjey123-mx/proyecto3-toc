@@ -2,8 +2,11 @@
 
 Las pruebas ejecutan ``main.py`` como proceso aparte (``sys.executable``) desde un
 directorio de trabajo temporal y comparan lo impreso con valores obtenidos sin el
-simulador: la definición de L = {aⁿbⁿ | n ≥ 1}, la suma binaria de Python y una
-reproducción de δ leída directamente del YAML con ``yaml.safe_load``.
+simulador: la definición de L = {aⁿbⁿ | n ≥ 1}, la aritmética binaria de Python,
+``w[::-1]`` y una reproducción de δ leída directamente del YAML con
+``yaml.safe_load``. Al final se comprueba que el README describa el repositorio
+real: enlaces internos, rutas, secciones citadas, secuencia del video y conteo de
+pruebas.
 """
 
 import itertools
@@ -24,9 +27,14 @@ from src.simulator.trace import build_trace
 ROOT = Path(__file__).resolve().parents[1]
 RECOGNIZER = ROOT / "machines" / "recognizer_anbn.yaml"
 TRANSFORMER = ROOT / "machines" / "transformer_binary_increment.yaml"
+REVERSE = ROOT / "machines" / "transformer_binary_reverse.yaml"
+ADDITION = ROOT / "machines" / "transformer_binary_addition.yaml"
+README = ROOT / "README.md"
 DEMOS = {
     RECOGNIZER: ["aaabbb", "aaaabbbb", "aaabb", "aabbbb"],
     TRANSFORMER: ["10101", "11011", "11111", "10000"],
+    REVERSE: ["10110", "11001", "10000", "11100"],
+    ADDITION: ["1011#0110", "1111#0001", "10101#10111", "10000#00001"],
 }
 
 HEADER = re.compile(r"Cadena \d+ de \d+: (?:'(.*)'|ε \(cadena vacía\)) \(longitud (\d+)\) ===")
@@ -43,6 +51,19 @@ def in_anbn(word):
 def increment(word):
     """value₂(w) + 1 en binario, con al menos |w| bits (conserva los ceros a la izquierda)."""
     return format(int(word, 2) + 1, f"0{len(word)}b")
+
+
+def reverse(word):
+    return word[::-1]
+
+
+def binary_sum(word):
+    """A + B con max(|A|, |B|) bits como mínimo; A y B se leen de ``A#B`` solo aquí."""
+    a, b = word.split("#")
+    return format(int(a, 2) + int(b, 2), f"0{max(len(a), len(b))}b")
+
+
+ORACLES = {TRANSFORMER: increment, REVERSE: reverse, ADDITION: binary_sum}
 
 
 def raw_machine(path):
@@ -132,6 +153,19 @@ def test_transformer_demo_writes_the_binary_successor(tmp_path):
         assert report["Cinta final"] == increment(report["word"])
 
 
+@pytest.mark.parametrize("machine", [REVERSE, ADDITION], ids=["inversión", "suma"])
+def test_new_transformer_demos_agree_with_their_oracles(tmp_path, machine):
+    code, out, err = run_cli(tmp_path, machine)
+    assert (code, err) == (0, "")
+    reports, rows = parse_output(out)
+    assert [r["word"] for r in reports] == DEMOS[machine]
+    for report, row in zip(reports, rows):
+        assert report["length"] == len(report["word"]) >= 5
+        assert report["Resultado"] == "ACCEPTED (aceptada)"
+        assert report["Cinta final"] == row[5] == ORACLES[machine](report["word"])
+        assert not set(report["Cinta final"]) & {"#", "*", "o", "i"}
+
+
 @pytest.mark.parametrize("word", DEMOS[TRANSFORMER])
 def test_transformer_logical_tape_holds_exactly_the_successor(word):
     machine, _ = parse_machine(load_yaml(TRANSFORMER))
@@ -203,6 +237,11 @@ def test_report_fields_table_and_summary_agree_for_every_outcome(tmp_path):
     (RECOGNIZER, 41, ["ACCEPTED", "ACCEPTED", "REJECTED", "REJECTED"]),
     (TRANSFORMER, 11, ["ACCEPTED", "ACCEPTED", "LIMIT_EXCEEDED", "ACCEPTED"]),
     (TRANSFORMER, 12, ["ACCEPTED", "ACCEPTED", "ACCEPTED", "ACCEPTED"]),
+    (REVERSE, 29, ["LIMIT_EXCEEDED"] * 4),
+    (REVERSE, 30, ["ACCEPTED"] * 4),
+    (ADDITION, 73, ["ACCEPTED", "ACCEPTED", "LIMIT_EXCEEDED", "LIMIT_EXCEEDED"]),
+    (ADDITION, 84, ["ACCEPTED", "ACCEPTED", "LIMIT_EXCEEDED", "ACCEPTED"]),
+    (ADDITION, 99, ["ACCEPTED"] * 4),
 ])
 def test_halting_exactly_at_the_step_limit_is_a_verdict(tmp_path, machine, limit, expected):
     """Regresión D-4 del Gate 01: detenerse justo en ``max_steps`` acepta o rechaza; no es un límite."""
@@ -222,10 +261,19 @@ def test_strings_do_not_share_tape_cache_or_results(tmp_path):
         assert all(report == reference[report["word"]] for report in reports)
 
 
+def short_words(alphabet, lengths):
+    return ["".join(p) for n in lengths for p in itertools.product(alphabet, repeat=n)]
+
+
 def test_cli_agrees_with_the_oracles_on_every_short_string(tmp_path):
-    sweeps = [(RECOGNIZER, "ab", range(0, 9)), (TRANSFORMER, "01", range(1, 10))]
-    for machine, alphabet, lengths in sweeps:
-        words = ["".join(p) for n in lengths for p in itertools.product(alphabet, repeat=n)]
+    operands = short_words("01", range(1, 4))
+    sweeps = [
+        (RECOGNIZER, short_words("ab", range(0, 9))),
+        (TRANSFORMER, short_words("01", range(1, 10))),
+        (REVERSE, short_words("01", range(0, 9))),
+        (ADDITION, [f"{a}#{b}" for a in operands for b in operands]),
+    ]
+    for machine, words in sweeps:
         code, out, err = run_cli(tmp_path, with_strings(tmp_path, machine, words))
         assert (code, err) == (0, "")
         rows = parse_output(out)[1]
@@ -234,7 +282,7 @@ def test_cli_agrees_with_the_oracles_on_every_short_string(tmp_path):
             if machine == RECOGNIZER:
                 assert row[3] == ("ACCEPTED" if in_anbn(word) else "REJECTED"), word
             else:
-                assert (row[3], row[5]) == ("ACCEPTED", increment(word)), word
+                assert (row[3], row[5]) == ("ACCEPTED", ORACLES[machine](word) or "(cinta en blanco)"), word
 
 
 def test_final_states_are_terminal_even_with_outgoing_rules(tmp_path):
@@ -288,9 +336,91 @@ def test_input_errors_are_reported_with_their_location_and_never_simulated(tmp_p
 
 # --- Evidencia de la demostración ------------------------------------------------------------
 
-@pytest.mark.parametrize("name", ["recognizer_anbn", "transformer_binary_increment"])
+@pytest.mark.parametrize("name", [machine.stem for machine in DEMOS])
 def test_demonstration_evidence_matches_the_current_output(name):
-    """``docs/evidence/`` guarda la salida real de las dos demostraciones; debe seguir siendo exacta."""
+    """``docs/evidence/`` guarda la salida real de las cuatro demostraciones; debe seguir siendo exacta."""
     code, out, err = run_cli(ROOT, f"machines/{name}.yaml")
     assert (code, err) == (0, "")
     assert out.replace("\r\n", "\n") == (ROOT / "docs" / "evidence" / f"{name}.txt").read_text(encoding="utf-8")
+
+
+# --- Menú interactivo con la secuencia del video ---------------------------------------------
+
+def test_video_key_sequence_of_the_readme_runs_the_eight_demonstrations(tmp_path):
+    """La secuencia de teclas de README.md, §25.2, produce las ocho ejecuciones obligatorias y una cadena nueva."""
+    text = README.read_text(encoding="utf-8")
+    keys = re.search(r"Secuencia completa de teclas.*?```text\n(.+?)\n```", text, flags=re.DOTALL).group(1).split()
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "main.py"), "--interactive"],
+        input="\n".join(keys) + "\n", capture_output=True, cwd=tmp_path, timeout=120, encoding="utf-8",
+    )
+    assert (completed.returncode, completed.stderr) == (0, "")
+    runs = re.findall(r"^=== Cadena: '(.*)' \(longitud \d+\) ===\nResultado:     (\w+)", completed.stdout, flags=re.MULTILINE)
+    outputs = re.findall(r"^Cinta final:   (.*)$", completed.stdout, flags=re.MULTILINE)
+    assert runs == [
+        ("aaabbb", "ACCEPTED"), ("aaaabbbb", "ACCEPTED"), ("aaabb", "REJECTED"), ("aabbbb", "REJECTED"),
+        *[(word, "ACCEPTED") for word in DEMOS[ADDITION]], ("101#11", "ACCEPTED"),
+    ]
+    assert outputs[4:] == [binary_sum(word) for word in [*DEMOS[ADDITION], "101#11"]]
+    assert completed.stdout.rstrip().endswith("Hasta luego.")
+
+
+# --- El README describe el repositorio real ----------------------------------------------------
+
+RETIRED = {
+    "docs/architecture.md", "docs/methodology.md", "docs/test_cases.md",
+    "docs/handoff_gate_01_derek.md", "docs/handoff_gate_02_vernel.md",
+}
+"""Documentos integrados en el README y retirados del árbol; solo se citan como historial."""
+
+
+def slug(heading):
+    """Ancla de GitHub: minúsculas, sin puntuación, espacios convertidos en guiones."""
+    return re.sub(r"[^\w\- ]", "", heading.strip().lower()).replace(" ", "-")
+
+
+def readme_headings(text):
+    return [slug(heading) for heading in re.findall(r"^#{2,3} (.+)$", text, flags=re.MULTILINE)]
+
+
+def test_readme_internal_links_resolve_to_unique_headings():
+    text = README.read_text(encoding="utf-8")
+    headings = readme_headings(text)
+    assert len(headings) == len(set(headings))
+    links = set(re.findall(r"\]\(#([^)]+)\)", text))
+    assert links and links <= set(headings)
+
+
+def test_readme_paths_exist_except_the_retired_documents():
+    text = README.read_text(encoding="utf-8")
+    paths = set(re.findall(r"`((?:machines|docs|src|tests)/[\w./-]+)`", text))
+    assert {path for path in paths if not (ROOT / path).exists()} == RETIRED & paths
+    assert not any((ROOT / path).exists() for path in RETIRED)
+    assert "git show 6a27bab:docs/handoff_gate_01_derek.md" in text
+
+
+def test_sections_cited_from_code_and_machines_exist_in_the_readme():
+    text = README.read_text(encoding="utf-8")
+    numbers = {re.match(r"(\d+(?:\.\d+)?)", heading).group(1)
+               for heading in re.findall(r"^#{2,3} (\d+(?:\.\d+)?)\.? ", text, flags=re.MULTILINE)}
+    cited = set()
+    for path in [*ROOT.glob("machines/*.yaml"), *ROOT.glob("tests/*.py"), *ROOT.glob("tests/fixtures/*.yaml")]:
+        source = path.read_text(encoding="utf-8")
+        cited |= set(re.findall(r"README\.md\W{0,4}(?:\(sección |, §| §)(\d+(?:\.\d+)?)", source))
+    assert cited and cited <= numbers
+
+
+def test_readme_test_counts_match_the_collected_suite():
+    collected = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "-p", "no:cacheprovider"],
+        capture_output=True, cwd=ROOT, timeout=120, encoding="utf-8",
+    ).stdout
+    counts = {}
+    for line in collected.splitlines():
+        if "::" in line:
+            name = Path(line.split("::")[0]).name
+            counts[name] = counts.get(name, 0) + 1
+    text = README.read_text(encoding="utf-8")
+    table = dict(re.findall(r"^\| `(test_\w+\.py)` \| (\d+) \|", text, flags=re.MULTILINE))
+    assert {name: int(count) for name, count in table.items()} == counts
+    assert f"**{sum(counts.values())} pruebas aprobadas, 0 fallidas, 0 omitidas**" in text

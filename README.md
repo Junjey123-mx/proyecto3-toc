@@ -1136,9 +1136,13 @@ Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
    - todas las de longitud 0 a 10 (2047) en la inversión;
    - todos los pares A#B con operandos de 1 a 4 bits (900) en la suma, más 150 pares aleatorios de hasta 16 bits con semilla fija.
 
-   A nivel de CLI, en un proceso aparte, todas las de longitud 0 a 8 sobre {a, b} (511) y las binarias de longitud 1 a 9 (1022).
-3. **Reproducción de δ desde el YAML.** Para las ocho cadenas de la demostración, cada ID_k+1 se recalcula a partir de ID_k con la δ leída directamente del archivo con `yaml.safe_load`, sin el parser ni el motor del proyecto.
-4. **Fórmulas cerradas.** Los pasos reales se comparan con T(n) = 2n² + 2n + 1, T(w) = |w| + t + 2 y, en la inversión, con T(n) = ⌊(n² + 6n + 6)/2⌋.
+   A nivel de CLI, en un proceso aparte:
+   - todas las de longitud 0 a 8 sobre {a, b} (511) en la reconocedora;
+   - las binarias de longitud 1 a 9 (1022) en el incremento;
+   - las binarias de longitud 0 a 8 (511) en la inversión;
+   - los pares A#B con operandos de 1 a 3 bits (196) en la suma.
+3. **Reproducción de δ desde el YAML.** Para las 16 cadenas de la demostración, cada ID_k+1 se recalcula a partir de ID_k con la δ leída directamente del archivo con `yaml.safe_load`, sin el parser ni el motor del proyecto.
+4. **Fórmulas cerradas.** Los pasos reales se comparan con T(n) = 2n² + 2n + 1, T(w) = |w| + t + 2, en la inversión con T(n) = ⌊(n² + 6n + 6)/2⌋ y en la suma con T(A#B) = |A#B| + m² + |B|² + 4m + 3.
 5. **Invariantes.** En la inversión, cada visita a q0 se compara con el invariante de rondas (§12.6). En la suma, la caché al entrar a q6 se compara con la suma b_k + acarreo_k de cada columna calculada aparte.
 6. **Equivalencia con los laboratorios.** Los resultados resueltos a mano se usan como oráculos:
 
@@ -1163,6 +1167,12 @@ Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
     - el menú: sin sesiones, sin validación del formato y con IDs recortadas.
 
     En cada caso fallaron pruebas, así que las pruebas detectan esos defectos.
+11. **Coherencia de la documentación.** `tests/test_integration.py` comprueba sobre este README que:
+    - cada enlace interno apunte a un encabezado existente;
+    - cada ruta citada exista, salvo los documentos retirados que se integraron aquí;
+    - las secciones citadas desde las pruebas y los YAML existan;
+    - la secuencia de teclas del video (§25.2) produzca las ocho ejecuciones obligatorias;
+    - la tabla de §18 coincida con las pruebas que recoge pytest.
 
 ## 18. Pruebas automatizadas
 
@@ -1170,7 +1180,7 @@ Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
 python -m pytest -q
 ```
 
-Resultado en Fedora 43 con Python 3.14.6: **480 pruebas aprobadas, 0 fallidas, 0 omitidas** (349 antes de la ampliación).
+Resultado en Fedora 43 con Python 3.14.6: **502 pruebas aprobadas, 0 fallidas, 0 omitidas** (349 antes de la ampliación). El mismo resultado se obtuvo en un entorno virtual nuevo, sobre una copia limpia del repositorio (`git archive`), instalando solo `requirements.txt` (PyYAML 6.0.3, pytest 9.2.0).
 
 | Archivo | Pruebas | Contenido |
 |---|---:|---|
@@ -1190,9 +1200,9 @@ Resultado en Fedora 43 con Python 3.14.6: **480 pruebas aprobadas, 0 fallidas, 0
 | `test_recognizer.py` | 37 | Demostración, recorridos a mano, fórmula de pasos, exhaustiva ≤ 10 |
 | `test_transformer.py` | 25 | Incremento: demostración, desbordamiento en −1, caché, exhaustiva 1–10 |
 | `test_reverse.py` | 29 | Inversión: demostración, palíndromos, ceros, paridad, ε, invariante de rondas, caché, exhaustiva 0–10, fórmula de pasos |
-| `test_addition.py` | 42 | Suma: demostración, acarreo, desbordamiento, cero, ceros iniciales, formatos mal formados, símbolos fuera de Σ, exhaustiva ≤ 4 bits, aleatoria ≤ 16 bits, caché por columna, recorrido de `1#1` |
+| `test_addition.py` | 42 | Suma: demostración, acarreo, desbordamiento, cero, ceros iniciales, formatos mal formados, símbolos fuera de Σ, exhaustiva ≤ 4 bits, aleatoria ≤ 16 bits, fórmula de pasos, caché por columna, recorrido de `1#1` |
 | `test_interactive.py` | 60 | Menú: navegación, opciones inválidas, ficha técnica, ejecución individual igual a `--machine`, cadenas nuevas, validación, sesión, EOF, Ctrl+C, otro directorio de trabajo, catálogo frente al YAML |
-| `test_integration.py` | 35 | Extremo a extremo por proceso aparte, oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada, evidencia de `docs/evidence/` |
+| `test_integration.py` | 57 | Extremo a extremo por proceso aparte con las cuatro máquinas: oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada, evidencia de `docs/evidence/`, secuencia del video en `--interactive`, enlaces, rutas, secciones y conteos del README |
 
 ## 19. Instalación y ejecución
 
@@ -1404,7 +1414,7 @@ Los archivos retirados siguen en el historial de Git, por ejemplo `git show 6a27
 - `transformer_binary_increment.txt`
 - `transformer_binary_reverse.txt`
 
-`tests/test_integration.py` vuelve a ejecutar la CLI y comprueba que la salida coincida carácter por carácter con los archivos de las máquinas que cubre. Para regenerarlos, desde la raíz y en Linux:
+`tests/test_integration.py` vuelve a ejecutar la CLI y comprueba que la salida coincida carácter por carácter con los cuatro archivos. Para regenerarlos, desde la raíz y en Linux:
 
 ```bash
 for m in recognizer_anbn transformer_binary_addition transformer_binary_increment transformer_binary_reverse; do
