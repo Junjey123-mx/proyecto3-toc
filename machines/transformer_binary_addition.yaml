@@ -1,0 +1,575 @@
+---
+# Máquina alteradora: suma binaria, f(A#B) = A + B en binario.
+# Una primera pasada comprueba el formato A#B (A y B binarios no vacíos, un solo '#'). Después,
+# en cada ronda toma el último bit de B (y lo borra), lleva en la caché la suma bit + acarreo
+# hasta la columna correspondiente de A, escribe ahí el bit del resultado marcado ('o' = 0,
+# 'i' = 1) y regresa con el nuevo acarreo en la caché. El blanco a la izquierda de A vale 0, así
+# que B más largo que A y el desbordamiento extienden el resultado hacia posiciones negativas.
+# Cuando B se agota sin acarreo, borra '#' y restaura las marcas a '0' y '1'.
+# Caché: suma en tránsito B/'1'/'2' (0, 1 o 2) hacia la izquierda; acarreo B/'1' hacia la derecha.
+# Ancho del resultado: max(|A|, |B|) bits, uno más si hay desbordamiento (conserva ceros iniciales).
+q_states:
+  q_list:
+  - q0
+  - q1
+  - q2
+  - q3
+  - q4
+  - q5
+  - q6
+  - q7
+  - q8
+  - q9
+  initial: q0
+  final: q9
+alphabet:
+- '0'
+- '1'
+- '#'
+tape_alphabet:
+- '0'
+- '1'
+- '#'
+- 'o'
+- 'i'
+-
+delta:
+# Validación del formato. q0: A debe empezar con un bit (sin regla para '#' ni para el blanco).
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+# q1: cruza A hasta el separador (sin regla para el blanco: falta '#').
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value:
+    tape_input: '#'
+  output:
+    final_state: q2
+    mem_cache_value:
+    tape_output: '#'
+    tape_displacement: R
+# q2: B debe empezar con un bit (sin regla para el blanco ni para otro '#').
+- params:
+    initial_state: q2
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q2
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+# q3: cruza B hasta el blanco final (sin regla para un segundo '#'); el acarreo inicial es 0.
+- params:
+    initial_state: q3
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q3
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+- params:
+    initial_state: q3
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output:
+    tape_displacement: L
+# q4 sin acarreo (caché vacía): borra el último bit de B y lleva b + 0 hacia la izquierda.
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output:
+    tape_displacement: L
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q5
+    mem_cache_value: '1'
+    tape_output:
+    tape_displacement: L
+# q4 sin acarreo sobre '#': B se agotó y no queda acarreo; borra '#' y restaura el resultado.
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input: '#'
+  output:
+    final_state: q8
+    mem_cache_value:
+    tape_output:
+    tape_displacement: L
+# q4 con acarreo 1: borra el último bit de B y lleva b + 1 hacia la izquierda.
+- params:
+    initial_state: q4
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q5
+    mem_cache_value: '1'
+    tape_output:
+    tape_displacement: L
+- params:
+    initial_state: q4
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q5
+    mem_cache_value: '2'
+    tape_output:
+    tape_displacement: L
+# q4 con acarreo 1 sobre '#': B se agotó; el acarreo se suma a la siguiente columna de A.
+- params:
+    initial_state: q4
+    mem_cache_value: '1'
+    tape_input: '#'
+  output:
+    final_state: q6
+    mem_cache_value: '1'
+    tape_output: '#'
+    tape_displacement: L
+# q5 con suma vacía (0): cruza lo que queda de B hacia la izquierda hasta '#'.
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input: '#'
+  output:
+    final_state: q6
+    mem_cache_value:
+    tape_output: '#'
+    tape_displacement: L
+# q5 con suma '1': cruza lo que queda de B hacia la izquierda hasta '#'.
+- params:
+    initial_state: q5
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q5
+    mem_cache_value: '1'
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q5
+    mem_cache_value: '1'
+    tape_output: '1'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value: '1'
+    tape_input: '#'
+  output:
+    final_state: q6
+    mem_cache_value: '1'
+    tape_output: '#'
+    tape_displacement: L
+# q5 con suma '2': cruza lo que queda de B hacia la izquierda hasta '#'.
+- params:
+    initial_state: q5
+    mem_cache_value: '2'
+    tape_input: '0'
+  output:
+    final_state: q5
+    mem_cache_value: '2'
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value: '2'
+    tape_input: '1'
+  output:
+    final_state: q5
+    mem_cache_value: '2'
+    tape_output: '1'
+    tape_displacement: L
+- params:
+    initial_state: q5
+    mem_cache_value: '2'
+    tape_input: '#'
+  output:
+    final_state: q6
+    mem_cache_value: '2'
+    tape_output: '#'
+    tape_displacement: L
+# q6 con suma vacía (0): cruza los bits ya calculados; en la columna siguiente de A
+# (un bit, o el blanco a su izquierda, que vale 0) escribe el bit del resultado y el acarreo.
+- params:
+    initial_state: q6
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q6
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q6
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: R
+# q6 con suma '1': cruza los bits ya calculados; en la columna siguiente de A
+# (un bit, o el blanco a su izquierda, que vale 0) escribe el bit del resultado y el acarreo.
+- params:
+    initial_state: q6
+    mem_cache_value: '1'
+    tape_input: 'o'
+  output:
+    final_state: q6
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value: '1'
+    tape_input: 'i'
+  output:
+    final_state: q6
+    mem_cache_value: '1'
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value: '1'
+    tape_input:
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: R
+# q6 con suma '2': cruza los bits ya calculados; en la columna siguiente de A
+# (un bit, o el blanco a su izquierda, que vale 0) escribe el bit del resultado y el acarreo.
+- params:
+    initial_state: q6
+    mem_cache_value: '2'
+    tape_input: 'o'
+  output:
+    final_state: q6
+    mem_cache_value: '2'
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value: '2'
+    tape_input: 'i'
+  output:
+    final_state: q6
+    mem_cache_value: '2'
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q6
+    mem_cache_value: '2'
+    tape_input: '0'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value: '2'
+    tape_input: '1'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'i'
+    tape_displacement: R
+- params:
+    initial_state: q6
+    mem_cache_value: '2'
+    tape_input:
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: R
+# q7 sin acarreo: regresa hacia la derecha hasta el blanco que sigue a B.
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input: '#'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: '#'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q7
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output:
+    tape_displacement: L
+# q7 con acarreo 1: regresa hacia la derecha hasta el blanco que sigue a B.
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input: 'o'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input: 'i'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: 'i'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input: '#'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: '#'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q7
+    mem_cache_value: '1'
+    tape_output: '1'
+    tape_displacement: R
+- params:
+    initial_state: q7
+    mem_cache_value: '1'
+    tape_input:
+  output:
+    final_state: q4
+    mem_cache_value: '1'
+    tape_output:
+    tape_displacement: L
+# q8: restaura las marcas hacia la izquierda; se detiene en el primer bit de A no tocado o en el blanco.
+- params:
+    initial_state: q8
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q8
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q8
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q8
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: L
+- params:
+    initial_state: q8
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q9
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: S
+- params:
+    initial_state: q8
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q9
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: S
+- params:
+    initial_state: q8
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q9
+    mem_cache_value:
+    tape_output:
+    tape_displacement: R
+simulation_strings:
+# Demostración: cuatro transformaciones, todas con entradas de longitud >= 5.
+- '1011#0110'
+- '1111#0001'
+- '10101#10111'
+- '10000#00001'
