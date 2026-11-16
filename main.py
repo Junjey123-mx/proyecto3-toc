@@ -2,15 +2,23 @@
 
 Uso:
     python main.py --machine machines/<archivo>.yaml [--max-steps N]
+    python main.py --interactive [--max-steps N]
 
-Lee la máquina y su lista ``simulation_strings``, simula cada cadena en orden y
-escribe en la salida estándar la descripción formal de la máquina (con la tabla δ
-completa), el reporte de cada cadena (veredicto, cinta final y todas las IDs) y
-un resumen. Los errores del archivo se escriben en la salida de errores.
+Con ``--machine`` lee la máquina y su lista ``simulation_strings``, simula cada
+cadena en orden y escribe en la salida estándar la descripción formal de la
+máquina (con la tabla δ completa), el reporte de cada cadena (veredicto, cinta
+final y todas las IDs) y un resumen. Los errores del archivo se escriben en la
+salida de errores.
+
+Con ``--interactive`` abre un menú numérico con las cuatro máquinas del
+proyecto (``src/cli/interactive_menu.py``): muestra la ficha técnica de la
+máquina elegida y ejecuta una cadena por vez, predefinida o ingresada en la
+terminal, con el mismo reporte completo.
 
 Códigos de salida: 0 si todas las cadenas se simularon (aceptadas, rechazadas o
-detenidas por el límite de pasos), 1 si el archivo no se pudo cargar o la
-máquina no es válida, 2 si los argumentos son incorrectos.
+detenidas por el límite de pasos) o si el menú se cerró normalmente, 1 si el
+archivo no se pudo cargar o la máquina no es válida, 2 si los argumentos son
+incorrectos y 130 si el menú se interrumpió con Ctrl+C.
 """
 
 import argparse
@@ -18,16 +26,16 @@ import sys
 from collections.abc import Sequence
 from typing import TextIO
 
+from src.cli.interactive_menu import run_menu
 from src.input.errors import InputError
 from src.input.machine_parser import parse_machine
 from src.input.machine_validator import validate_machine
 from src.input.yaml_loader import load_yaml
-from src.model.transition import BLANK
-from src.model.turing_machine import TuringMachine
+from src.output.machine_formatter import describe_machine
 from src.output.result_formatter import format_result, format_summary
 from src.simulator.engine import DEFAULT_MAX_STEPS, simulate
 from src.simulator.trace import build_trace
-from src.utils.notation import blank_glyph, format_rule, show_symbol
+from src.utils.notation import blank_glyph
 
 EXIT_OK = 0
 EXIT_INPUT_ERROR = 1
@@ -50,10 +58,17 @@ def build_parser() -> argparse.ArgumentParser:
         prog="python main.py",
         description=(
             "Simula una máquina de Turing de una cinta descrita en YAML sobre cada cadena de "
-            "simulation_strings y muestra todas las descripciones instantáneas."
+            "simulation_strings y muestra todas las descripciones instantáneas. Con --interactive "
+            "abre un menú con las cuatro máquinas del proyecto."
         ),
     )
-    parser.add_argument("--machine", required=True, metavar="ARCHIVO", help="archivo YAML de la máquina")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--machine", metavar="ARCHIVO", help="archivo YAML de la máquina")
+    mode.add_argument(
+        "--interactive",
+        action="store_true",
+        help="menú numérico con las cuatro máquinas del proyecto; ejecuta una cadena por vez",
+    )
     parser.add_argument(
         "--max-steps",
         type=positive_int,
@@ -62,26 +77,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"máximo de transiciones por cadena (por defecto {DEFAULT_MAX_STEPS})",
     )
     return parser
-
-
-def describe_machine(machine: TuringMachine, blank: str) -> list[str]:
-    """Resumen formal M = (Q, Σ, Γ, δ, q0, B, F) con la tabla δ completa, en el orden del YAML."""
-
-    def symbols(values: frozenset) -> str:
-        ordered = sorted(values, key=lambda s: (s is BLANK, s or ""))
-        return "{" + ", ".join(show_symbol(s, blank) for s in ordered) + "}"
-
-    width = len(str(len(machine.transitions)))
-    return [
-        f"Q  = {{{', '.join(sorted(machine.states))}}}",
-        f"Σ  = {symbols(machine.input_alphabet)}",
-        f"Γ  = {symbols(machine.tape_alphabet)}",
-        f"q0 = {machine.initial_state}",
-        f"F  = {{{', '.join(sorted(machine.final_states))}}}",
-        f"B  = {blank} (blanco)",
-        f"δ  = {len(machine.transitions)} reglas" + (", en el orden del YAML:" if machine.transitions else ""),
-        *(f"  {number:>{width}}. {format_rule(rule, blank)}" for number, rule in enumerate(machine.transitions, start=1)),
-    ]
 
 
 def run(path: str, max_steps: int, out: TextIO, err: TextIO) -> int:
@@ -129,6 +124,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Punto de entrada; ``argv`` sin el nombre del programa (``None`` usa ``sys.argv``)."""
     _use_utf8(sys.stdout, sys.stderr)
     args = build_parser().parse_args(argv)
+    if args.interactive:
+        return run_menu(max_steps=args.max_steps)
     return run(args.machine, args.max_steps, sys.stdout, sys.stderr)
 
 
