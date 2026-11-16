@@ -74,7 +74,7 @@ Con `python main.py --machine ARCHIVO`, el programa:
 5. imprime, por cadena, el resultado y su motivo, la cinta final, la ID final y la tabla completa «Paso | ID | Transición aplicada»;
 6. termina con un resumen de todas las cadenas.
 
-Con `python main.py --interactive` se elige una de las cuatro máquinas en un menú, se lee su ficha técnica (componentes, tabla δ y procedimiento) y se ejecuta una cadena por vez con el mismo reporte completo ([§15](#15-menú-interactivo)).
+Con `python main.py --interactive` se elige una de las cuatro máquinas en un menú, se lee su ficha técnica (componentes, tabla δ y procedimiento) y se ejecuta una cadena por vez, con todas sus IDs y un veredicto final destacado ([§15](#15-menú-interactivo)).
 
 Ninguna parte del código de Python conoce las máquinas: las cuatro se definen solo en YAML y las ejecuta el mismo motor. La inversión y la suma se calculan con reglas δ; `w[::-1]` e `int(A, 2) + int(B, 2)` solo aparecen en las pruebas, como oráculos.
 
@@ -184,6 +184,7 @@ src/output       id_formatter · tape_formatter · result_formatter · machine_f
 main.py --machine ARCHIVO        src/cli (main.py --interactive)
 todas las cadenas del YAML       machine_catalog: rutas y textos de presentación
                                  interactive_menu: ficha y una cadena por vez
+                                 simulation_view: bloques de cada ejecución
 ```
 
 | Capa | Archivos | Responsabilidad | No hace |
@@ -242,7 +243,9 @@ format_summary(traces, blank) -> list[str]
 blank_glyph(machine) -> str; format_rule(rule, blank) -> str
 describe_machine(machine, blank) -> list[str]             # cabecera de --machine
 formal_components(machine, blank); cache_values(machine); format_delta_table(machine, blank)
+format_procedure(trace, blank); format_final_configuration(trace, blank)  # bloques de format_result
 run_menu(read=input, out=None, max_steps=10_000) -> int   # 0 al salir, 130 con Ctrl+C
+format_simulation(trace, machine, recognizer, blank)      # src/cli/simulation_view.py
 CATALOG: tuple[CatalogEntry, ...]                         # src/cli/machine_catalog.py
 ```
 
@@ -991,25 +994,27 @@ Con esto se atiende la observación M-1 del Gate 02: la alteradora de la entrega
 | Módulo | Responsabilidad | No hace |
 |---|---|---|
 | `src/cli/machine_catalog.py` | `CATALOG`: para cada máquina, la ruta de su YAML (relativa al código, no al directorio de trabajo) y los textos de presentación: objetivo, fases, papel de cada estado y marcador, uso de la caché, terminación y formato de entrada | Contener reglas δ, Q, Σ o Γ: esos datos se leen del YAML |
-| `src/cli/interactive_menu.py` | `Menu`: navegación numérica, ficha técnica, lista de cadenas de la sesión, validación de cadenas nuevas y ejecución de una cadena | Simular por su cuenta ni escribir en los YAML |
+| `src/cli/interactive_menu.py` | `Menu`: navegación numérica, ficha técnica, lista de cadenas de la sesión, validación de cadenas nuevas, ejecución de una cadena y pausa | Simular por su cuenta ni escribir en los YAML |
+| `src/cli/simulation_view.py` | `format_simulation`: los cinco bloques de una ejecución y el titular del veredicto (§15.7) | Simular ni calcular resultados: solo ordena una traza ya calculada |
 | `src/output/machine_formatter.py` | Componentes formales, valores de caché y tabla δ por columnas; también la cabecera de `--machine` | Modificar la máquina |
 
-El menú reutiliza la misma cadena de funciones que `--machine`: `load_yaml → parse_machine → validate_machine` al abrir una máquina, y `simulate → build_trace → format_result` al ejecutar una cadena. El reporte de una cadena es idéntico en los dos modos; solo cambia el encabezado (`=== Cadena: …` en lugar de `=== Cadena k de n: …`). `tests/test_interactive.py` comprueba esa igualdad con las 16 cadenas predefinidas, y también que los estados y marcadores descritos en el catálogo sean exactamente los de cada YAML.
+El menú reutiliza la misma cadena de funciones que `--machine`: `load_yaml → parse_machine → validate_machine` al abrir una máquina, y `simulate → build_trace` al ejecutar una cadena. Para presentar el resultado, `simulation_view` usa `format_procedure` y `format_final_configuration`, las mismas funciones con que `format_result` arma el reporte de `--machine`. Las IDs, las reglas aplicadas y la configuración final son idénticas en los dos modos; el menú solo cambia el orden y deja el veredicto al final. `tests/test_interactive.py` comprueba esa igualdad, sección por sección, con las 16 cadenas predefinidas, y también que los estados y marcadores descritos en el catálogo sean exactamente los de cada YAML.
 
 ### 15.2 Flujo de navegación
 
 ```text
-Menú principal ── 1–4 ──> ficha técnica de la máquina (no simula nada)
+Menú principal ── 1–4 ──> ficha técnica de la máquina (una vez; no simula nada)
   │                          │
   5: Salir                   v
                       Submenú de la máquina
-                        1. Cadenas disponibles ── n ──> ejecuta solo esa cadena ──> vuelve a la lista
+                        1. Cadenas disponibles ── n ──> ejecuta solo esa cadena ── ENTER ──> vuelve a la lista
                         │                         └─ «Regresar» ──> submenú
-                        2. Ingresar una cadena nueva ── válida ──> se agrega a la sesión y se ejecuta
+                        2. Ingresar una cadena nueva ── válida ──> se agrega y se ejecuta ── ENTER ──> submenú
                         │                              └─ inválida ──> diagnóstico: 1. Intentar de nuevo · 2. Regresar
-                        3. Ver información de la máquina ──> ficha técnica otra vez
-                        4. Regresar al menú principal
+                        3. Regresar al menú principal
 ```
+
+La ficha técnica se imprime una vez por cada selección de la máquina en el menú principal, justo antes del submenú. No se repite al volver de una ejecución ni al regresar de la lista. Por eso el submenú no tiene una opción «Ver información»: repetía la ficha que ya está en pantalla. Para verla de nuevo basta con regresar (`3`) y volver a elegir la máquina.
 
 La ficha técnica tiene siete partes:
 - A: nombre y archivo de la máquina;
@@ -1027,7 +1032,8 @@ La ficha técnica tiene siete partes:
 | Máquinas | Cualquier YAML válido | Las cuatro del catálogo |
 | Cadenas | Todas las de `simulation_strings`, en orden | Una por vez: predefinida o escrita en la terminal |
 | Cabecera | Componentes y δ en notación del enunciado | Ficha técnica con la tabla δ por columnas y la explicación del procedimiento |
-| Reporte por cadena | `format_result` completo | El mismo, más un resumen de una fila |
+| Reporte por cadena | `format_result` completo: veredicto, configuración final y todas las IDs | Las mismas IDs y la misma configuración final, en bloques delimitados y con el veredicto al final ([§15.7](#157-presentación-de-una-ejecución)) |
+| Pausa | Ninguna | «Presione ENTER para regresar al submenú...» después de cada ejecución |
 | Errores | Código 1 y mensaje en la salida de errores | Diagnóstico y reintento; el menú continúa |
 | Fin | Al terminar las cadenas | «Salir», fin de la entrada (código 0) o Ctrl+C (código 130) |
 
@@ -1037,13 +1043,14 @@ La ficha técnica tiene siete partes:
 
 1. `python main.py --interactive` y elegir la máquina (por ejemplo `4`, suma binaria). Se muestra la ficha.
 2. En el submenú, `1` (Cadenas disponibles). Cada cadena aparece numerada con su origen, `[predefinida]` o `[agregada en sesión]`.
-3. Escribir el número de la cadena. Se ejecuta solo esa, con el reporte completo, y la lista vuelve a mostrarse; su última opción, «Regresar», vuelve al submenú.
+3. Escribir el número de la cadena. Se ejecuta solo esa, con el procedimiento completo y el veredicto al final ([§15.7](#157-presentación-de-una-ejecución)).
+4. Pulsar ENTER en la pausa. La lista vuelve a mostrarse; su última opción, «Regresar», vuelve al submenú.
 
 ### 15.5 Ingresar una cadena nueva
 
 1. En el submenú, `2` (Ingresar una cadena nueva). El menú muestra la máquina, el alfabeto permitido y el formato esperado.
 2. Escribir la cadena tal cual, por ejemplo `0011` o `101#11`. Los ceros iniciales se conservan: la cadena nunca se convierte a número. En las máquinas cuyo dominio incluye ε, una línea vacía es la cadena vacía.
-3. Si es válida, se agrega a la lista de la sesión (sin duplicados) y se ejecuta de inmediato. La lista se conserva al regresar al menú principal y volver a la máquina, pero solo mientras el programa está abierto: el YAML nunca se modifica.
+3. Si es válida, se agrega a la lista de la sesión (sin duplicados) y se ejecuta de inmediato; después de ENTER se vuelve al submenú. La lista se conserva al regresar al menú principal y volver a la máquina, pero solo mientras el programa está abierto: el YAML nunca se modifica.
 
 ### 15.6 Validaciones de entrada
 
@@ -1053,6 +1060,7 @@ La ficha técnica tiene siete partes:
 | Menú o submenú | Vacía, texto, `0`, fuera de rango, `1.0` | «Opción no válida» o «No escribió ninguna opción»; se vuelve a preguntar |
 | Cadena nueva | Símbolo fuera de Σ (`1021`, `10 01`) | Diagnóstico con los símbolos inválidos; reintentar o regresar |
 | Cadena nueva | Fuera del formato de la máquina | Diagnóstico con el formato esperado |
+| Pausa tras una ejecución | ENTER (se acepta cualquier línea) | Vuelve a la lista de cadenas o al submenú |
 | Cualquiera | Fin de la entrada (Ctrl+D) | «Fin de la entrada: el simulador se cierra.», código 0 |
 | Cualquiera | Ctrl+C | «Interrumpido con Ctrl+C: el simulador se cierra.», código 130, sin traza de error |
 
@@ -1067,46 +1075,127 @@ Formato de cada máquina:
 
 Las opciones del menú y las cadenas se piden en momentos distintos, así que un `1` escrito como opción nunca se toma como la cadena binaria `1`. Una cadena que el menú no admite tampoco se presenta como rechazo: el rechazo solo lo decide la máquina al simular.
 
-### 15.7 Ejemplo real
+### 15.7 Presentación de una ejecución
 
-Fragmento de una sesión real en la suma binaria (opciones `4`, `2`). Después de cada prompt se muestra lo que se escribió, como aparece en la terminal:
+Cada ejecución, desde la lista o como cadena nueva, se imprime en cinco bloques delimitados y en este orden. Los separadores son ASCII: `=` para el inicio, el veredicto y el fin, y `-` para las secciones intermedias. La notación formal conserva sus símbolos Unicode (δ, ε, ⊢).
+
+| Bloque | Contenido | Origen |
+|---|---|---|
+| INICIO DE SIMULACIÓN | Máquina y su archivo, cadena de entrada y longitud | Catálogo y cadena elegida |
+| PROCEDIMIENTO PASO A PASO | Todas las IDs, de ID_0 a ID_n, cada una con la regla δ que la produjo | `format_procedure`: las mismas líneas que `--machine` |
+| CONFIGURACIÓN FINAL | Estado, caché, cabezal, cinta e ID final, y la cinta por posiciones con el cabezal | `format_final_configuration`: las mismas líneas que `--machine` |
+| VEREDICTO FINAL | Titular, cadena evaluada (o cadena original y cinta resultante), pasos y motivo | `outcome`, `reason` y la configuración final de la traza |
+| FIN DE SIMULACIÓN | Cierre; después viene la pausa | — |
+
+Ningún resultado aparece antes del procedimiento: primero se ve cómo se ejecutó la máquina y al final su conclusión. El titular depende del resultado y del tipo de máquina:
+
+| Resultado | Reconocedora | Alteradora |
+|---|---|---|
+| `ACCEPTED` | `ACCEPTED — CADENA ACEPTADA` | `ACCEPTED — TRANSFORMACIÓN COMPLETADA`, con la cadena original y la cinta resultante |
+| `REJECTED` | `REJECTED — CADENA RECHAZADA` | `REJECTED — PROCESAMIENTO RECHAZADO` |
+| `LIMIT_EXCEEDED` | `LIMIT_EXCEEDED — LÍMITE DE PASOS ALCANZADO` | `LIMIT_EXCEEDED — LÍMITE DE PASOS ALCANZADO` |
+
+El motivo es el texto que el motor produce al detenerse, no un mensaje genérico. Por ejemplo: «No hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final.» Con `LIMIT_EXCEEDED` se agrega que no se demostró aceptación ni rechazo, porque la máquina aún tenía una transición aplicable. La cinta resultante es el contenido de la configuración final, de la primera a la última celda no blanca: el menú no calcula la transformación por su cuenta.
+
+El menú solo ejecuta cadenas con el formato de la máquina. Por eso, con las cuatro máquinas actuales, una alteradora no llega a `REJECTED` desde el menú. El titular existe para que un rechazo nunca se presente como transformación completada, y `tests/test_interactive.py` lo comprueba con la suma sobre `1011`.
+
+Al terminar, el menú muestra «Presione ENTER para regresar al submenú...» y no imprime nada más hasta recibir la línea. Desde «Cadenas disponibles» se vuelve a la lista; desde «Ingresar una cadena nueva», al submenú de la máquina. Si la entrada termina durante la pausa (Ctrl+D, o una entrada redirigida que se agota), el simulador se cierra con código 0. Con Ctrl+C se cierra con código 130. `--machine` no hace pausas.
+
+### 15.8 Ejemplo real
+
+Sesión real en la reconocedora con la cadena `aab`, ingresada como cadena nueva: opción `1` en el menú principal, luego `2` en el submenú (se omite la ficha que se imprime al elegir la máquina). Después de cada prompt se muestra lo que se escribió; tras «Presione ENTER…» se pulsó ENTER sin texto.
 
 ```text
+=========================================
+           MÁQUINA SELECCIONADA
+=========================================
+
+Reconocedora — a^n b^n
+
+1. Cadenas disponibles
+2. Ingresar una cadena nueva
+3. Regresar al menú principal
+
+Seleccione una opción: 2
+
 INGRESAR NUEVA CADENA
 
-Máquina: Suma binaria
-Alfabeto permitido: {#, 0, 1}
-Formato: A#B: dos números binarios no vacíos separados por un único # (p. ej. 1011#0110)
-Ingrese una cadena: 1011
-Cadena no válida: '1011' no tiene el formato esperado: A#B: dos números binarios no vacíos separados por un único # (p. ej. 1011#0110).
+Máquina: Reconocedora aⁿbⁿ
+Alfabeto permitido: {a, b}
+Formato: cualquier cadena sobre {a, b}, incluida la vacía; la máquina decide si pertenece a L
+Deje la línea vacía para ingresar la cadena vacía (ε).
+Ingrese una cadena: aab
+'aab' se agregó a la lista de esta sesión (n.º 5).
 
-1. Intentar de nuevo
-2. Regresar al submenú
+=================================================
+               INICIO DE SIMULACIÓN
+=================================================
 
-Seleccione una opción: 1
-Ingrese una cadena: 101#11
-'101#11' se agregó a la lista de esta sesión (n.º 5).
+Máquina: Reconocedora — a^n b^n (recognizer_anbn.yaml)
+Cadena de entrada: 'aab'
+Longitud: 3
 
-Máquina: Alteradora — Suma binaria (transformer_binary_addition.yaml)
-=== Cadena: '101#11' (longitud 6) ===
-Resultado:     ACCEPTED (aceptada)
-Motivo:        alcanzó el estado final 'q9'
-Pasos:         45
-Estado final:  q9
+-------------------------------------------------
+            PROCEDIMIENTO PASO A PASO
+-------------------------------------------------
+
+Descripciones instantáneas (ID_0 a ID_7):
+  Paso  ID          Transición aplicada
+     0  [q0,B]aab   —
+     1  X[q1,B]ab   δ([q0, B], a) = ([q1, B], X, R)
+     2  Xa[q1,B]b   δ([q1, B], a) = ([q1, B], a, R)
+     3  X[q2,B]aY   δ([q1, B], b) = ([q2, B], Y, L)
+     4  [q2,B]XaY   δ([q2, B], a) = ([q2, B], a, L)
+     5  X[q0,B]aY   δ([q2, B], X) = ([q0, B], X, R)
+     6  XX[q1,B]Y   δ([q0, B], a) = ([q1, B], X, R)
+     7  XXY[q1,B]B  δ([q1, B], Y) = ([q1, B], Y, R)
+
+-------------------------------------------------
+               CONFIGURACIÓN FINAL
+-------------------------------------------------
+
+Estado final:  q1
 Caché final:   B
-Cabezal final: -1
-Cinta final:   1000
-ID final:      [q9,B]1000BBB
+Cabezal final: 3
+Cinta final:   XXY
+ID final:      XXY[q1,B]B
 
-posición -1  0  1  2  3  4  5
-cinta     1  0  0  0  B  B  B
-cabezal   ^
+posición 0 1 2 3
+cinta    X X Y B
+cabezal        ^
 
-Descripciones instantáneas (ID_0 a ID_45):
-  …
+=================================================
+                 VEREDICTO FINAL
+=================================================
+
+           REJECTED — CADENA RECHAZADA
+
+Cadena evaluada:  'aab'
+Pasos realizados: 7
+
+Motivo:
+No hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final.
+
+=================================================
+                FIN DE SIMULACIÓN
+=================================================
+
+Presione ENTER para regresar al submenú...
+
+=========================================
+           MÁQUINA SELECCIONADA
+=========================================
+
+Reconocedora — a^n b^n
+
+1. Cadenas disponibles
+2. Ingresar una cadena nueva
+3. Regresar al menú principal
+
+Seleccione una opción: 3
 ```
 
-Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
+`aab` no pertenece a L: la máquina marcó las dos `a`, pero q1 llega al blanco sin encontrar una segunda `b` que emparejar. Con `aabbbb` (cadena 4 de la lista) se detiene en `REJECTED` en 12 pasos, y con `aaabbb` en `ACCEPTED` en 25.
 
 ## 16. Decisiones de implementación en Python
 
@@ -1161,10 +1250,11 @@ Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
    - cadenas fuera de Σ, YAML inválido, claves repetidas y símbolos Unicode;
    - cadenas de Σ\* sin la forma A#B (rechazadas con la cinta intacta) y ε en la inversión.
 8. **Independencia.** Las mismas cadenas en otro orden, repetidas o intercaladas con otras producen reportes idénticos. En el menú, las cadenas de una máquina no aparecen en otra.
-9. **Equivalencia entre modos.** Cada cadena predefinida de las cuatro máquinas, ejecutada desde el menú, produce el mismo reporte que `--machine`.
+9. **Equivalencia entre modos.** Cada cadena predefinida de las cuatro máquinas, ejecutada desde el menú, muestra exactamente las mismas IDs, reglas aplicadas y configuración final que `--machine`, y un veredicto con el mismo resultado, número de pasos y motivo.
 10. **Mutaciones.** En copias temporales se alteraron:
     - reglas de los YAML nuevos: escrituras, destinos, la regla de ε y un segundo `#` admitido;
-    - el menú: sin sesiones, sin validación del formato y con IDs recortadas.
+    - el menú: sin sesiones, sin validación del formato y con IDs recortadas;
+    - la presentación: ficha repetida tras cada ejecución, sin pausa, veredicto antes del procedimiento y motivo genérico.
 
     En cada caso fallaron pruebas, así que las pruebas detectan esos defectos.
 11. **Coherencia de la documentación.** `tests/test_integration.py` comprueba sobre este README que:
@@ -1180,7 +1270,7 @@ Después siguen las 46 IDs y el resumen de la ejecución. 5 + 3 = 8 = `1000`.
 python -m pytest -q
 ```
 
-Resultado en Fedora 43 con Python 3.14.6: **502 pruebas aprobadas, 0 fallidas, 0 omitidas** (349 antes de la ampliación). El mismo resultado se obtuvo en un entorno virtual nuevo, sobre una copia limpia del repositorio (`git archive`), instalando solo `requirements.txt` (PyYAML 6.0.3, pytest 9.2.0).
+Resultado en Fedora 43 con Python 3.14.6: **520 pruebas aprobadas, 0 fallidas, 0 omitidas** (349 antes de la ampliación y 502 antes del refinamiento del menú). El mismo resultado se obtuvo en un entorno virtual nuevo, sobre una copia limpia del repositorio (`git archive`), instalando solo `requirements.txt` (PyYAML 6.0.3, pytest 9.2.0).
 
 | Archivo | Pruebas | Contenido |
 |---|---:|---|
@@ -1201,7 +1291,7 @@ Resultado en Fedora 43 con Python 3.14.6: **502 pruebas aprobadas, 0 fallidas, 0
 | `test_transformer.py` | 25 | Incremento: demostración, desbordamiento en −1, caché, exhaustiva 1–10 |
 | `test_reverse.py` | 29 | Inversión: demostración, palíndromos, ceros, paridad, ε, invariante de rondas, caché, exhaustiva 0–10, fórmula de pasos |
 | `test_addition.py` | 42 | Suma: demostración, acarreo, desbordamiento, cero, ceros iniciales, formatos mal formados, símbolos fuera de Σ, exhaustiva ≤ 4 bits, aleatoria ≤ 16 bits, fórmula de pasos, caché por columna, recorrido de `1#1` |
-| `test_interactive.py` | 60 | Menú: navegación, opciones inválidas, ficha técnica, ejecución individual igual a `--machine`, cadenas nuevas, validación, sesión, EOF, Ctrl+C, otro directorio de trabajo, catálogo frente al YAML |
+| `test_interactive.py` | 78 | Menú: navegación, submenú de tres opciones, ficha una vez por selección, opciones inválidas, ejecución individual con las mismas IDs y configuración que `--machine`, orden de los bloques, veredictos, pausa con ENTER, cadenas nuevas, validación, sesión, EOF, Ctrl+C, otro directorio de trabajo, recorrido real en un proceso aparte, catálogo frente al YAML |
 | `test_integration.py` | 57 | Extremo a extremo por proceso aparte con las cuatro máquinas: oráculos, reproducción de δ, frontera de `max_steps`, independencia, errores de entrada, evidencia de `docs/evidence/`, secuencia del video en `--interactive`, enlaces, rutas, secciones y conteos del README |
 
 ## 19. Instalación y ejecución
@@ -1253,7 +1343,7 @@ Con `--machine`, la salida estándar contiene, en este orden:
 
 ## 20. Resultados de la demostración
 
-Salida real de `python main.py --machine` con los cuatro archivos de `machines/`, guardada en `docs/evidence/`. Coincide con los valores esperados de [§10.7](#107-cadenas-de-la-demostración), [§11.9](#119-cadenas-de-la-demostración), [§12.8](#128-cadenas-de-la-demostración) y [§13.9](#139-cadenas-de-la-demostración), y con los oráculos independientes. Desde el menú, cada cadena produce el mismo reporte.
+Salida real de `python main.py --machine` con los cuatro archivos de `machines/`, guardada en `docs/evidence/`. Coincide con los valores esperados de [§10.7](#107-cadenas-de-la-demostración), [§11.9](#119-cadenas-de-la-demostración), [§12.8](#128-cadenas-de-la-demostración) y [§13.9](#139-cadenas-de-la-demostración), y con los oráculos independientes. Desde el menú, cada cadena muestra las mismas IDs y la misma configuración final, organizadas en bloques ([§15.7](#157-presentación-de-una-ejecución)).
 
 | Máquina | Cadena | Longitud | Resultado | Pasos | Cinta final | ID final |
 |---|---|---|---|---|---|---|
@@ -1391,7 +1481,7 @@ proyecto3-toc/
 │   ├── model/                     transition, turing_machine, tape, configuration, simulation_result
 │   ├── simulator/                 step, engine, trace
 │   ├── output/                    id_formatter, tape_formatter, result_formatter, machine_formatter
-│   ├── cli/                       machine_catalog, interactive_menu (§15)
+│   ├── cli/                       machine_catalog, interactive_menu, simulation_view (§15)
 │   └── utils/notation.py          blanco, tupla de control y reglas de δ
 ├── tests/                         19 archivos de pruebas y fixtures/statement_example_mt_1.yaml
 └── docs/
@@ -1431,21 +1521,23 @@ La demostración principal se hace en una sola sesión de `python main.py --inte
 | 1. Presentación | Proyecto, integrantes y objetivo | Este README | [§1](#1-objetivo-del-proyecto) | — |
 | 2. Arquitectura | Un solo motor genérico: entrada → modelo → simulador → traza → salida; la CLI y el menú usan las mismas funciones | Diagrama de [§5](#5-arquitectura) | [§5](#5-arquitectura), [§15.1](#151-arquitectura-del-menú) | Arquitectura (1) |
 | 3. Formato YAML | Claves del enunciado, caché dentro de [q, c], blanco = entrada vacía | Abrir `machines/transformer_binary_addition.yaml` | [§7](#7-contrato-yaml) | — |
-| 4. Menú | Las cuatro máquinas; al elegir una solo se muestra su ficha | `python main.py --interactive` | [§15](#15-menú-interactivo) | — |
+| 4. Menú | Las cuatro máquinas; al elegir una se muestra su ficha una vez y el submenú de tres opciones | `python main.py --interactive` | [§15](#15-menú-interactivo) | — |
 | 5. Reconocedora | Ficha: Q, Γ, tabla δ y fases de marcar, buscar, regresar y comprobar | `1` | [§10](#10-máquina-reconocedora) | Dificultad (3) |
-| 6. Dos aceptadas | `aaabbb` (25 pasos) y `aaaabbbb` (41 pasos), con todas sus IDs | `1` (Cadenas disponibles), `1`, `2` | [§20](#20-resultados-de-la-demostración) | Aceptadas (2) |
-| 7. Dos rechazadas | `aaabb` y `aabbbb`, con el motivo y la clave sin regla | `3`, `4`; luego `5` (Regresar) y `4` (menú principal) | [§10.4](#104-tabla-de-transiciones) | No aceptadas (2) |
+| 6. Dos aceptadas | `aaabbb` (25 pasos) y `aaaabbbb` (41 pasos): inicio, todas las IDs, configuración final y veredicto | `1` (Cadenas disponibles), `1`, ENTER, `2`, ENTER | [§20](#20-resultados-de-la-demostración) | Aceptadas (2) |
+| 7. Dos rechazadas | `aaabb` y `aabbbb`: el veredicto final da el motivo real, la clave sin regla | `3`, ENTER, `4`, ENTER; luego `5` (Regresar) y `3` (menú principal) | [§10.4](#104-tabla-de-transiciones) | No aceptadas (2) |
 | 8. Alteradora principal | Ficha de la suma: validación, caché con la suma (B, 1, 2) y el acarreo, marcas `o`/`i` | `4` | [§13](#13-máquina-alteradora-suma-binaria) | Dificultad (3) |
-| 9. Cuatro transformaciones | `1011#0110 → 10001`, `1111#0001 → 10000`, `10101#10111 → 101100`, `10000#00001 → 10001` | `1`, luego `1`, `2`, `3` y `4` | [§13.9](#139-cadenas-de-la-demostración) | Cuatro cadenas (4) |
+| 9. Cuatro transformaciones | `1011#0110 → 10001`, `1111#0001 → 10000`, `10101#10111 → 101100`, `10000#00001 → 10001`: «TRANSFORMACIÓN COMPLETADA» con la cinta resultante | `1`, luego `1`, `2`, `3` y `4`, cada una seguida de ENTER | [§13.9](#139-cadenas-de-la-demostración) | Cuatro cadenas (4) |
 | 10. Tabla δ e IDs | En una traza: la fila k muestra la regla que transformó ID_k−1; `[q5,2]` lleva una suma de 2; el resultado crece hacia la posición −1 | Sobre la traza anterior | [§9](#9-descripciones-instantáneas), [§13.8](#138-recorrido-a-mano-11--10) | Arquitectura (1), dificultad (3) |
-| 11. Entradas nuevas | Diagnóstico de `1011` (sin `#`) y ejecución de `101#11 → 1000` | `5` (Regresar), `2`, `1011`, `1`, `101#11` | [§15.5](#155-ingresar-una-cadena-nueva)–[§15.7](#157-ejemplo-real) | — |
-| 12. Conclusión | `python -m pytest -q`, oráculos independientes y limitaciones reales; si hay tiempo, inversión e incremento | `4`, `5` (Salir) | [§17](#17-estrategia-de-validación), [§18](#18-pruebas-automatizadas), [§23](#23-limitaciones-y-alcance) | — |
+| 11. Entradas nuevas | Diagnóstico de `1011` (sin `#`) y ejecución de `101#11 → 1000` | `5` (Regresar), `2`, `1011`, `1`, `101#11`, ENTER | [§15.5](#155-ingresar-una-cadena-nueva)–[§15.8](#158-ejemplo-real) | — |
+| 12. Conclusión | `python -m pytest -q`, oráculos independientes y limitaciones reales; si hay tiempo, inversión e incremento | `3`, `5` (Salir) | [§17](#17-estrategia-de-validación), [§18](#18-pruebas-automatizadas), [§23](#23-limitaciones-y-alcance) | — |
 
 Secuencia completa de teclas de las partes 4 a 12:
 
 ```text
 1  1  1 ⏎ 2 ⏎ 3 ⏎ 4 ⏎  5  3  4  1  1 ⏎ 2 ⏎ 3 ⏎ 4 ⏎  5  2  1011  1  101#11 ⏎  3  5
 ```
+
+`⏎` es ENTER sin texto: contesta la pausa que sigue a cada ejecución.
 
 La secuencia se verificó en Fedora con la entrada redirigida desde un archivo. Produce exactamente las ocho ejecuciones obligatorias (`aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas; las cuatro sumas) y la de `101#11`, y termina con «Hasta luego.». Ninguna cadena obligatoria necesita escribirse en vivo: las ocho están en `simulation_strings`. Comandos alternativos, sin menú:
 
@@ -1457,7 +1549,7 @@ python main.py --machine machines/transformer_binary_addition.yaml
 
 ## 26. Desarrollo y autoría
 
-El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull requests. Primero hubo tres etapas consecutivas (Gates) y después una ampliación. Cada integrante publicó solo durante su etapa y entregó a la siguiente el SHA final, los resultados de las pruebas y las interfaces públicas.
+El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull requests. Primero hubo tres etapas consecutivas (Gates), después una ampliación y por último un refinamiento del menú. Cada integrante publicó solo durante su etapa y entregó a la siguiente el SHA final, los resultados de las pruebas y las interfaces públicas.
 
 | Etapa | Responsable | Commits | Contenido |
 |---|---|---|---|
@@ -1465,6 +1557,7 @@ El proyecto se desarrolló en la rama `main`, sin ramas paralelas ni pull reques
 | Gate 02 | Derek | C10–C22, 1 corrección y el traspaso | Traza, formateadores de IDs, cinta y resultados, CLI, la reconocedora y el incremento binario, sus pruebas y su documentación |
 | Gate 03 | Vernel | C23–C26 | Pruebas de integración, observaciones del Gate 02, README y evidencia de entrega |
 | Ampliación | Vernel | C27–C32 | Inversión y suma binaria, menú interactivo, sus pruebas, este README y la validación integral |
+| Refinamiento del menú | Vernel | C33–C34 | Submenú de tres opciones, ejecución en bloques con veredicto final, pausa con ENTER, sus pruebas y esta guía |
 
 Commits de cada etapa (los autores se pueden comprobar con `git log --format='%h %an %s'`):
 
@@ -1473,7 +1566,8 @@ Commits de cada etapa (los autores se pueden comprobar con `git log --format='%h
 | Gate 01 | C01 `2a56d90`, C02 `8227c3d`, C03 `0cfbb86`, C04 `0dbecc2`, C05 `12427b2`, C06 `7f7cecf`, C07 `41811b1`, C08 `cd73751`, C09 `5bf9feb`; correcciones `aadce5f` (`.gitignore` anclado a la raíz), `1065521` (claves repetidas y escalares inválidos) y `093dffd` (detención exacta en el límite); traspaso `d818cfb` |
 | Gate 02 | Corrección `d43e572` (prueba de archivo ilegible en Windows); C10 `992da7e`, C11 `095e49b`, C12 `d2b025a`, C13 `85febb4`, C14 `6ac71da`, C15 `33873e7`, C16 `a64e304`, C17 `862a810`, C18 `c7ef952`, C19 `a584f5f`, C20 `1e14611`, C21 `3b017a5`, C22 `5af9c73`; traspaso `78d73b5` |
 | Gate 03 | C23 `dca24dd`, C24 `38912b9`, C25 `7de8b46`, C26 `6a27bab` |
-| Ampliación | C27 `ce9239b` (inversión), C28 `66ef3e5` (suma), C29 `e49b023` (menú), C30 `d3db61e` (pruebas del menú); C31 (este README) y C32 (validación integral) en `git log` |
+| Ampliación | C27 `ce9239b` (inversión), C28 `66ef3e5` (suma), C29 `e49b023` (menú), C30 `d3db61e` (pruebas del menú), C31 `dfafb56` (README), C32 `50b7720` (validación integral) |
+| Refinamiento del menú | C33 `3b751f9` (presentación y navegación); C34 (pruebas y esta guía) en `git log` |
 
 Al cerrar el Gate 02, la suite se ejecutó en Windows 11 con Python 3.14.3: 310 pruebas aprobadas y 1 omitida, la de archivo ilegible, por la razón descrita en [§22](#22-discusión).
 

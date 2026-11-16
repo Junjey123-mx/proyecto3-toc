@@ -19,13 +19,19 @@ import pytest
 import main
 import src.cli.interactive_menu as interactive
 from src.cli import machine_catalog
-from src.cli.interactive_menu import ADDED, EXIT_INTERRUPTED, PREDEFINED, run_menu
+from src.cli.interactive_menu import ADDED, EXIT_INTERRUPTED, PAUSE, PREDEFINED, RULE, run_menu
 from src.cli.machine_catalog import CATALOG
+from src.cli.simulation_view import LIMIT_NOTE, MAJOR, MINOR, format_verdict
 from src.input.machine_parser import parse_machine
 from src.input.yaml_loader import load_yaml
 from src.model.transition import BLANK
+from src.output.id_formatter import format_id
 from src.output.machine_formatter import format_delta_table, formal_components
-from src.utils.notation import blank_glyph
+from src.output.result_formatter import BLANK_TAPE
+from src.output.tape_formatter import tape_contents
+from src.simulator.engine import simulate
+from src.simulator.trace import build_trace
+from src.utils.notation import blank_glyph, format_rule, show_symbol
 
 ROOT = Path(__file__).resolve().parents[1]
 RECOGNIZER, INCREMENT, REVERSE, ADDITION = "1", "2", "3", "4"
@@ -383,6 +389,132 @@ def test_session_never_writes_the_yaml_files():
     assert {entry.file: entry.path.read_bytes() for entry in CATALOG} == before
 
 
+# Presentación de cada ejecución: inicio, procedimiento, configuración final, veredicto, fin
+
+
+def test_sheet_is_shown_once_per_selection_and_not_after_each_run():
+    sheet = "A. Máquina: Reconocedora aⁿbⁿ — machines/recognizer_anbn.yaml"
+    _, out, _ = menu(RECOGNIZER, STRINGS, "1", ENTER, "3", ENTER, back_from_list(RECOGNIZER), NEW, "ab", ENTER,
+                     BACK, RECOGNIZER, BACK, EXIT)
+    assert out.count(sheet) == 2
+    assert out.index(sheet) < out.index("INICIO DE SIMULACIÓN")
+    assert out.count("FIN DE SIMULACIÓN") == 3
+    assert out.rindex("FIN DE SIMULACIÓN") < out.rindex(sheet)
+    assert [word for word, _ in simulations(out)] == ["aaabbb", "aaabb", "ab"]
+
+
+@pytest.mark.parametrize(("option", "entry"), list(zip("1234", CATALOG)))
+def test_every_run_has_the_same_delimited_layout_and_complete_data(option, entry):
+    machine, strings = loaded(entry)
+    blank, word = blank_glyph(machine), strings[0]
+    trace = build_trace(simulate(machine, word))
+    _, out, _ = menu(option, STRINGS, "1", ENTER, back_from_list(option), BACK, EXIT)
+    lines = out.splitlines()
+    titles = ["INICIO DE SIMULACIÓN", "PROCEDIMIENTO PASO A PASO", "CONFIGURACIÓN FINAL", "VEREDICTO FINAL",
+              "FIN DE SIMULACIÓN"]
+    found = [index for index, line in enumerate(lines) if line.strip() in titles]
+    assert [lines[index].strip() for index in found] == titles
+    for index, rule in zip(found, [MAJOR, MINOR, MINOR, MAJOR, MAJOR]):
+        assert lines[index - 1] == lines[index + 1] == rule
+        assert lines[index] == lines[index].strip().center(len(rule)).rstrip()
+
+    [(_, sections)] = simulations(out)
+    rows = [row.split(maxsplit=2) for row in sections["PROCEDIMIENTO PASO A PASO"][2:]]
+    assert len(rows) == trace.steps + 1 == len(trace.entries)
+    assert [int(row[0]) for row in rows] == list(range(trace.steps + 1))
+    assert [row[1] for row in rows] == [format_id(step, len(word), blank) for step in trace.entries]
+    assert rows[0][2] == "—"
+    assert [row[2] for row in rows[1:]] == [format_rule(step.applied, blank) for step in trace.entries[1:]]
+    assert sections["CONFIGURACIÓN FINAL"][:5] == [
+        f"Estado final:  {trace.final.state}",
+        f"Caché final:   {show_symbol(trace.final.cache, blank)}",
+        f"Cabezal final: {trace.final.head}",
+        f"Cinta final:   {tape_contents(trace.final.tape, blank) or BLANK_TAPE}",
+        f"ID final:      {rows[-1][1]}",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("option", "word", "max_steps", "verdict"),
+    [
+        (RECOGNIZER, "aaabbb", 10_000, ["ACCEPTED — CADENA ACEPTADA", "", "Cadena evaluada:  'aaabbb'",
+                                        "Pasos realizados: 25", "", "Motivo:", "Alcanzó el estado final 'q4'."]),
+        (RECOGNIZER, "aab", 10_000, ["REJECTED — CADENA RECHAZADA", "", "Cadena evaluada:  'aab'",
+                                     "Pasos realizados: 7", "", "Motivo:",
+                                     "No hay regla para el estado 'q1' con caché el blanco leyendo el blanco, "
+                                     "y 'q1' no es final."]),
+        (INCREMENT, "11111", 10_000, ["ACCEPTED — TRANSFORMACIÓN COMPLETADA", "", "Cadena original:  '11111'",
+                                      "Cinta resultante: '100000'", "Pasos realizados: 12", "", "Motivo:",
+                                      "Alcanzó el estado final 'q2'."]),
+        (REVERSE, "10110", 10_000, ["ACCEPTED — TRANSFORMACIÓN COMPLETADA", "", "Cadena original:  '10110'",
+                                    "Cinta resultante: '01101'", "Pasos realizados: 30", "", "Motivo:",
+                                    "Alcanzó el estado final 'q6'."]),
+        (REVERSE, "", 10_000, ["ACCEPTED — TRANSFORMACIÓN COMPLETADA", "", "Cadena original:  ε (cadena vacía)",
+                               f"Cinta resultante: {BLANK_TAPE}", "Pasos realizados: 1", "", "Motivo:",
+                               "Alcanzó el estado final 'q6'."]),
+        (ADDITION, "10101#10111", 10_000, ["ACCEPTED — TRANSFORMACIÓN COMPLETADA", "",
+                                           "Cadena original:  '10101#10111'", "Cinta resultante: '101100'",
+                                           "Pasos realizados: 99", "", "Motivo:", "Alcanzó el estado final 'q9'."]),
+        (RECOGNIZER, "aaabbb", 10, ["LIMIT_EXCEEDED — LÍMITE DE PASOS ALCANZADO", "", "Cadena evaluada:  'aaabbb'",
+                                    "Pasos realizados: 10", "", "Motivo:",
+                                    "Se aplicaron 10 transiciones y la máquina aún no se detiene.", *LIMIT_NOTE]),
+        (ADDITION, "1#1", 5, ["LIMIT_EXCEEDED — LÍMITE DE PASOS ALCANZADO", "", "Cadena evaluada:  '1#1'",
+                              "Pasos realizados: 5", "", "Motivo:",
+                              "Se aplicaron 5 transiciones y la máquina aún no se detiene.", *LIMIT_NOTE]),
+    ],
+    ids=["aceptada", "rechazada", "incremento", "inversión", "inversión-ε", "suma", "límite", "límite-suma"],
+)
+def test_final_verdict_states_the_engine_outcome_and_its_reason(option, word, max_steps, verdict):
+    _, out, _ = menu(option, NEW, word, ENTER, BACK, EXIT, max_steps=max_steps)
+    [(entered, sections)] = simulations(out)
+    body = sections["VEREDICTO FINAL"]
+    assert entered == word
+    assert [body[0].strip(), *body[1:]] == verdict
+
+
+def test_a_rejection_in_a_transformer_is_not_presented_as_a_completed_transformation():
+    """El menú no deja simular «1011» en la suma (falta #), pero la máquina sí lo rechaza: el titular lo dice."""
+    machine, _ = loaded(CATALOG[3])
+    trace = build_trace(simulate(machine, "1011"))
+    verdict = format_verdict(trace, recognizer=False, blank=blank_glyph(machine))
+    assert [verdict[4].strip(), *verdict[5:]] == [
+        "REJECTED — PROCESAMIENTO RECHAZADO", "", "Cadena evaluada:  '1011'", f"Pasos realizados: {trace.steps}", "",
+        "Motivo:", "No hay regla para el estado 'q1' con caché el blanco leyendo el blanco, y 'q1' no es final.",
+    ]
+
+
+def test_pause_waits_for_enter_before_the_menu_is_shown_again():
+    out = io.StringIO()
+    keyboard = Keyboard(RECOGNIZER, STRINGS, "1", ENTER, back_from_list(RECOGNIZER), BACK, EXIT)
+    snapshots = []
+
+    def read(prompt):
+        snapshots.append((prompt, out.getvalue()))
+        return keyboard(prompt)
+
+    assert run_menu(read, out) == 0
+    assert [prompt for prompt, _ in snapshots] == [
+        "Seleccione una opción: ", "Seleccione una opción: ", "Seleccione una cadena: ", PAUSE,
+        "Seleccione una cadena: ", "Seleccione una opción: ", "Seleccione una opción: ",
+    ]
+    at_pause, after_enter = snapshots[3][1], snapshots[4][1]
+    assert at_pause.endswith(f"FIN DE SIMULACIÓN\n{MAJOR}\n\n")
+    assert after_enter[len(at_pause):].lstrip("\n").startswith("CADENAS DISPONIBLES — Reconocedora aⁿbⁿ")
+
+
+def test_end_of_input_at_the_pause_closes_the_menu_cleanly():
+    code, out, keyboard = menu(RECOGNIZER, STRINGS, "1")
+    assert code == 0 and keyboard.prompts[-1] == PAUSE
+    assert out.index("FIN DE SIMULACIÓN") < out.index("Fin de la entrada: el simulador se cierra.")
+    assert out.rstrip().endswith("Fin de la entrada: el simulador se cierra.")
+
+
+def test_ctrl_c_at_the_pause_keeps_exit_code_130():
+    code, out, keyboard = menu(ADDITION, STRINGS, "1", KeyboardInterrupt)
+    assert code == EXIT_INTERRUPTED and keyboard.prompts[-1] == PAUSE
+    assert out.rstrip().endswith("Interrumpido con Ctrl+C: el simulador se cierra.")
+
+
 # Salida y robustez
 
 
@@ -451,3 +583,26 @@ def test_real_ctrl_c_exits_with_code_130_and_no_traceback():
     assert process.returncode == 130
     assert err == "" and "Traceback" not in out
     assert out.rstrip().endswith("Interrumpido con Ctrl+C: el simulador se cierra.")
+
+
+def test_reported_walkthrough_in_a_real_process(tmp_path):
+    """Recorrido del informe de uso: «aabbbb» desde la lista y «aab» como cadena nueva, con ENTER tras cada una."""
+    keys = [RECOGNIZER, STRINGS, "4", ENTER, back_from_list(RECOGNIZER), NEW, "aab", ENTER, BACK, EXIT]
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "main.py"), "--interactive"],
+        input="\n".join(keys) + "\n", cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", timeout=120,
+    )
+    out = completed.stdout
+    assert (completed.returncode, completed.stderr) == (0, "")
+    assert "Traceback" not in out and "Ver información" not in out
+    assert out.count("A. Máquina: Reconocedora aⁿbⁿ") == 1
+    runs = simulations(out)
+    assert [word for word, _ in runs] == ["aabbbb", "aab"]
+    verdicts = [sections["VEREDICTO FINAL"] for _, sections in runs]
+    assert [verdict[0].strip() for verdict in verdicts] == ["REJECTED — CADENA RECHAZADA"] * 2
+    assert [verdict[3] for verdict in verdicts] == ["Pasos realizados: 12", "Pasos realizados: 7"]
+    after_pause = out.split(PAUSE)
+    assert len(after_pause) == 3
+    assert after_pause[1].lstrip("\n").startswith("CADENAS DISPONIBLES — Reconocedora aⁿbⁿ")
+    assert after_pause[2].lstrip("\n").startswith(f"{RULE}\n{'MÁQUINA SELECCIONADA'.center(len(RULE)).rstrip()}")
+    assert out.rstrip().endswith("Hasta luego.")
