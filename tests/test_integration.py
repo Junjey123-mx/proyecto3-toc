@@ -347,21 +347,26 @@ def test_demonstration_evidence_matches_the_current_output(name):
 # --- Menú interactivo con la secuencia del video ---------------------------------------------
 
 def test_video_key_sequence_of_the_readme_runs_the_eight_demonstrations(tmp_path):
-    """La secuencia de teclas de README.md, §25.2, produce las ocho ejecuciones obligatorias y una cadena nueva."""
+    """La secuencia de teclas de README.md, §25.2, produce las ocho ejecuciones obligatorias y una cadena nueva.
+
+    En la secuencia, ``⏎`` es la línea vacía (ENTER) que contesta la pausa al final de cada ejecución.
+    """
     text = README.read_text(encoding="utf-8")
-    keys = re.search(r"Secuencia completa de teclas.*?```text\n(.+?)\n```", text, flags=re.DOTALL).group(1).split()
+    sequence = re.search(r"Secuencia completa de teclas.*?```text\n(.+?)\n```", text, flags=re.DOTALL).group(1)
+    keys = ["" if key == "⏎" else key for key in sequence.split()]
     completed = subprocess.run(
         [sys.executable, str(ROOT / "main.py"), "--interactive"],
         input="\n".join(keys) + "\n", capture_output=True, cwd=tmp_path, timeout=120, encoding="utf-8",
     )
     assert (completed.returncode, completed.stderr) == (0, "")
-    runs = re.findall(r"^=== Cadena: '(.*)' \(longitud \d+\) ===\nResultado:     (\w+)", completed.stdout, flags=re.MULTILINE)
+    words = re.findall(r"^Cadena de entrada: '(.*)'$", completed.stdout, flags=re.MULTILINE)
+    verdicts = re.findall(r"^ +(ACCEPTED|REJECTED|LIMIT_EXCEEDED) — ", completed.stdout, flags=re.MULTILINE)
     outputs = re.findall(r"^Cinta final:   (.*)$", completed.stdout, flags=re.MULTILINE)
-    assert runs == [
-        ("aaabbb", "ACCEPTED"), ("aaaabbbb", "ACCEPTED"), ("aaabb", "REJECTED"), ("aabbbb", "REJECTED"),
-        *[(word, "ACCEPTED") for word in DEMOS[ADDITION]], ("101#11", "ACCEPTED"),
-    ]
+    assert words == [*DEMOS[RECOGNIZER], *DEMOS[ADDITION], "101#11"]
+    assert verdicts == ["ACCEPTED", "ACCEPTED", "REJECTED", "REJECTED", *["ACCEPTED"] * 5]
     assert outputs[4:] == [binary_sum(word) for word in [*DEMOS[ADDITION], "101#11"]]
+    assert completed.stdout.count("Presione ENTER para regresar al submenú...") == len(words)
+    assert "Ver información" not in completed.stdout
     assert completed.stdout.rstrip().endswith("Hasta luego.")
 
 

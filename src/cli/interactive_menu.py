@@ -2,10 +2,13 @@
 
 El menú solo navega y presenta. Cada máquina se carga con ``load_yaml`` →
 ``parse_machine`` → ``validate_machine``, cada cadena se ejecuta con
-``simulate`` → ``build_trace`` y el reporte lo escriben los mismos formateadores
-que usa ``python main.py --machine``: la traza de una cadena es la misma en los
-dos modos. Las cadenas ingresadas se guardan en memoria durante la sesión y
-nunca se escriben en el YAML.
+``simulate`` → ``build_trace`` y ``simulation_view`` ordena el resultado en
+bloques (inicio, procedimiento, configuración final, veredicto, fin) con las
+mismas líneas de IDs y de configuración que imprime ``python main.py
+--machine``: la traza de una cadena es la misma en los dos modos. La ficha
+técnica se muestra al elegir la máquina, no después de cada ejecución. Las
+cadenas ingresadas se guardan en memoria durante la sesión y nunca se escriben
+en el YAML.
 
 Dos contextos de entrada separados: en un menú solo se aceptan los números de
 sus opciones; al ingresar una cadena, el texto se valida contra Σ y contra el
@@ -19,13 +22,14 @@ from dataclasses import dataclass, field
 from typing import TextIO
 
 from src.cli.machine_catalog import CATALOG, CatalogEntry
+from src.cli.simulation_view import format_simulation
 from src.input.errors import InputError
 from src.input.machine_parser import parse_machine
 from src.input.machine_validator import validate_machine
 from src.input.yaml_loader import load_yaml
 from src.model.turing_machine import TuringMachine
 from src.output.machine_formatter import cache_values, format_delta_table, format_symbols, formal_components
-from src.output.result_formatter import format_result, format_summary, show_word
+from src.output.result_formatter import show_word
 from src.simulator.engine import DEFAULT_MAX_STEPS, simulate
 from src.simulator.trace import build_trace
 from src.utils.notation import blank_glyph
@@ -35,6 +39,7 @@ WIDTH = 96
 PREDEFINED = "predefinida"
 ADDED = "agregada en sesión"
 EXIT_INTERRUPTED = 130
+PAUSE = "Presione ENTER para regresar al submenú..."
 
 
 @dataclass
@@ -81,18 +86,15 @@ class Menu:
                 self.machine_menu(session)
 
     def machine_menu(self, session: Session) -> None:
-        options = ["Cadenas disponibles", "Ingresar una cadena nueva", "Ver información de la máquina",
-                   "Regresar al menú principal"]
+        options = ["Cadenas disponibles", "Ingresar una cadena nueva", "Regresar al menú principal"]
         while True:
             self.banner("MÁQUINA SELECCIONADA")
-            self.say(f"{session.entry.menu_label} ({session.entry.file})")
+            self.say("", session.entry.menu_label)
             choice = self.choose(options, "Seleccione una opción: ")
             if choice == 1:
                 self.strings_menu(session)
             elif choice == 2:
                 self.new_string(session)
-            elif choice == 3:
-                self.show_sheet(session)
             else:
                 return
 
@@ -166,11 +168,11 @@ class Menu:
         return None
 
     def execute(self, session: Session, word: str) -> None:
-        """Simula solo ``word`` y muestra el reporte completo, igual que ``--machine``, y su resumen."""
+        """Simula solo ``word`` con el motor, muestra la ejecución completa y espera ENTER para volver."""
         trace = build_trace(simulate(session.machine, word, self.max_steps))
-        self.say("", f"Máquina: {session.entry.menu_label} ({session.entry.file})")
-        self.say(*format_result(trace, blank=session.blank))
-        self.say("", "Resumen de la ejecución:", *(f"  {line}" for line in format_summary([trace], session.blank)))
+        label = f"{session.entry.menu_label} ({session.entry.file})"
+        self.say("", *format_simulation(trace, label, session.entry.recognizer, session.blank), "")
+        self.read(PAUSE)
 
     def show_sheet(self, session: Session) -> None:
         """Ficha técnica: componentes y δ leídos del YAML, más la explicación del catálogo."""

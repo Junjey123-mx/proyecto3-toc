@@ -1444,7 +1444,7 @@ La demostración principal se hace en una sola sesión de `python main.py --inte
 Secuencia completa de teclas de las partes 4 a 12:
 
 ```text
-1  1  1 2 3 4  5  4  4  1  1 2 3 4  5  2  1011  1  101#11  4  5
+1  1  1 ⏎ 2 ⏎ 3 ⏎ 4 ⏎  5  3  4  1  1 ⏎ 2 ⏎ 3 ⏎ 4 ⏎  5  2  1011  1  101#11 ⏎  3  5
 ```
 
 La secuencia se verificó en Fedora con la entrada redirigida desde un archivo. Produce exactamente las ocho ejecuciones obligatorias (`aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas; las cuatro sumas) y la de `101#11`, y termina con «Hasta luego.». Ninguna cadena obligatoria necesita escribirse en vivo: las ocho están en `simulation_strings`. Comandos alternativos, sin menú:

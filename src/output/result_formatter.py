@@ -49,27 +49,41 @@ def format_result(
     condensa la vista por posiciones de la cinta final; la tabla de IDs se
     muestra siempre completa.
     """
-    final = trace.final
-    length = len(trace.word)
     position = f"Cadena {number} de {total}: " if number is not None and total is not None else "Cadena: "
-    contents = tape_contents(final.tape, blank) or BLANK_TAPE
-    lines = [
-        f"=== {position}{show_word(trace.word)} (longitud {length}) ===",
+    return [
+        f"=== {position}{show_word(trace.word)} (longitud {len(trace.word)}) ===",
         f"Resultado:     {format_outcome(trace.outcome)}",
         f"Motivo:        {trace.reason}",
         f"Pasos:         {trace.steps}",
+        *format_final_configuration(trace, blank, max_tape_cells),
+        "",
+        *format_procedure(trace, blank),
+    ]
+
+
+def format_final_configuration(
+    trace: Trace, blank: str = DEFAULT_BLANK_GLYPH, max_tape_cells: int | None = None
+) -> list[str]:
+    """Estado, caché, cabezal, cinta e ID de la última configuración, y la cinta por posiciones."""
+    final = trace.final
+    length = len(trace.word)
+    return [
         f"Estado final:  {final.state}",
         f"Caché final:   {show_symbol(final.cache, blank)}",
         f"Cabezal final: {final.head}",
-        f"Cinta final:   {contents}",
+        f"Cinta final:   {tape_contents(final.tape, blank) or BLANK_TAPE}",
         f"ID final:      {format_id(final, length, blank)}",
         "",
         *render_entry_tape(final, length, blank, max_tape_cells),
-        "",
+    ]
+
+
+def format_procedure(trace: Trace, blank: str = DEFAULT_BLANK_GLYPH) -> list[str]:
+    """Todas las IDs, de ID_0 a ID_n, cada una con la regla δ que la produjo."""
+    return [
         f"Descripciones instantáneas (ID_0 a ID_{trace.steps}):",
         *(f"  {line}" for line in format_id_lines(trace, blank)),
     ]
-    return lines
 
 
 def format_summary(traces: Sequence[Trace], blank: str = DEFAULT_BLANK_GLYPH) -> list[str]:

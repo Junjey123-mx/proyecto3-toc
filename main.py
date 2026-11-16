@@ -13,7 +13,8 @@ salida de errores.
 Con ``--interactive`` abre un menú numérico con las cuatro máquinas del
 proyecto (``src/cli/interactive_menu.py``): muestra la ficha técnica de la
 máquina elegida y ejecuta una cadena por vez, predefinida o ingresada en la
-terminal, con el mismo reporte completo.
+terminal, con todas sus IDs, la configuración final y el veredicto; al terminar
+cada ejecución espera ENTER antes de volver al submenú.
 
 Códigos de salida: 0 si todas las cadenas se simularon (aceptadas, rechazadas o
 detenidas por el límite de pasos) o si el menú se cerró normalmente, 1 si el
