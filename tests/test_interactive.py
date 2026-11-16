@@ -497,7 +497,9 @@ def test_pause_waits_for_enter_before_the_menu_is_shown_again():
         "Seleccione una opción: ", "Seleccione una opción: ", "Seleccione una cadena: ", PAUSE,
         "Seleccione una cadena: ", "Seleccione una opción: ", "Seleccione una opción: ",
     ]
-    at_pause, after_enter = snapshots[3][1], snapshots[4][1]
+    chosen, at_pause, after_enter = snapshots[2][1], snapshots[3][1], snapshots[4][1]
+    # Entre la elección y la pausa solo está el bloque: ningún resultado antes de «INICIO DE SIMULACIÓN».
+    assert at_pause[len(chosen):].startswith(f"\n{MAJOR}\n{'INICIO DE SIMULACIÓN'.center(len(MAJOR)).rstrip()}\n")
     assert at_pause.endswith(f"FIN DE SIMULACIÓN\n{MAJOR}\n\n")
     assert after_enter[len(at_pause):].lstrip("\n").startswith("CADENAS DISPONIBLES — Reconocedora aⁿbⁿ")
 
