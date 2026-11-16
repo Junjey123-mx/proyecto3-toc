@@ -1,0 +1,349 @@
+---
+# Máquina alteradora: inversión de cadenas binarias, f(w) = w^R (los bits de w en orden inverso).
+# Intercambia los extremos aún sin procesar: toma el bit de la izquierda en la caché, deja un
+# hueco '*', lleva el bit hasta el extremo derecho sin procesar, lo cambia por el bit que encuentra
+# (que pasa a la caché) y regresa a llenar el hueco. Los bits ya colocados se marcan con 'o' (0) e
+# 'i' (1); al terminar, una última pasada los restaura a '0' y '1'.
+# Caché: '0' o '1' = bit en tránsito; vacía (blanco) = ningún bit en tránsito.
+q_states:
+  q_list:
+  - q0
+  - q1
+  - q2
+  - q3
+  - q4
+  - q5
+  - q6
+  initial: q0
+  final: q6
+alphabet:
+- '0'
+- '1'
+tape_alphabet:
+- '0'
+- '1'
+- 'o'
+- 'i'
+- '*'
+-
+delta:
+# q0: elige el bit sin procesar más a la izquierda, lo guarda en la caché y deja el hueco '*'.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '0'
+  output:
+    final_state: q1
+    mem_cache_value: '0'
+    tape_output: '*'
+    tape_displacement: R
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value: '1'
+    tape_output: '*'
+    tape_displacement: R
+# q0 lee un bit ya colocado: no quedan bits sin procesar (longitud par); pasa a rebobinar.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: L
+# q0 lee el blanco: la entrada es vacía y su inversa también.
+- params:
+    initial_state: q0
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q6
+    mem_cache_value:
+    tape_output:
+    tape_displacement: S
+# q1 con '0' en la caché: cruza los bits sin procesar hacia la derecha.
+- params:
+    initial_state: q1
+    mem_cache_value: '0'
+    tape_input: '0'
+  output:
+    final_state: q1
+    mem_cache_value: '0'
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value: '0'
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value: '0'
+    tape_output: '1'
+    tape_displacement: R
+# q1 con '0': al llegar a un bit colocado o al blanco, retrocede al último bit sin procesar.
+- params:
+    initial_state: q1
+    mem_cache_value: '0'
+    tape_input: 'o'
+  output:
+    final_state: q2
+    mem_cache_value: '0'
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q1
+    mem_cache_value: '0'
+    tape_input: 'i'
+  output:
+    final_state: q2
+    mem_cache_value: '0'
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q1
+    mem_cache_value: '0'
+    tape_input:
+  output:
+    final_state: q2
+    mem_cache_value: '0'
+    tape_output:
+    tape_displacement: L
+# q1 con '1' en la caché: cruza los bits sin procesar hacia la derecha.
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q1
+    mem_cache_value: '1'
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q1
+    mem_cache_value: '1'
+    tape_output: '1'
+    tape_displacement: R
+# q1 con '1': al llegar a un bit colocado o al blanco, retrocede al último bit sin procesar.
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: 'o'
+  output:
+    final_state: q2
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input: 'i'
+  output:
+    final_state: q2
+    mem_cache_value: '1'
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q1
+    mem_cache_value: '1'
+    tape_input:
+  output:
+    final_state: q2
+    mem_cache_value: '1'
+    tape_output:
+    tape_displacement: L
+# q2 con '0': intercambia; coloca 'o' y carga en la caché el bit que había.
+- params:
+    initial_state: q2
+    mem_cache_value: '0'
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value: '0'
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q2
+    mem_cache_value: '0'
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value: '1'
+    tape_output: 'o'
+    tape_displacement: L
+# q2 con '0' sobre el hueco: era el bit central (longitud impar); lo coloca y pasa a rebobinar.
+- params:
+    initial_state: q2
+    mem_cache_value: '0'
+    tape_input: '*'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: L
+# q2 con '1': intercambia; coloca 'i' y carga en la caché el bit que había.
+- params:
+    initial_state: q2
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value: '0'
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q2
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value: '1'
+    tape_output: 'i'
+    tape_displacement: L
+# q2 con '1' sobre el hueco: era el bit central (longitud impar); lo coloca y pasa a rebobinar.
+- params:
+    initial_state: q2
+    mem_cache_value: '1'
+    tape_input: '*'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: L
+# q3 con '0': regresa hacia la izquierda, cruzando bits sin procesar, hasta el hueco.
+- params:
+    initial_state: q3
+    mem_cache_value: '0'
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value: '0'
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q3
+    mem_cache_value: '0'
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value: '0'
+    tape_output: '1'
+    tape_displacement: L
+# q3 con '0' sobre el hueco: coloca 'o', vacía la caché y vuelve a q0.
+- params:
+    initial_state: q3
+    mem_cache_value: '0'
+    tape_input: '*'
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: R
+# q3 con '1': regresa hacia la izquierda, cruzando bits sin procesar, hasta el hueco.
+- params:
+    initial_state: q3
+    mem_cache_value: '1'
+    tape_input: '0'
+  output:
+    final_state: q3
+    mem_cache_value: '1'
+    tape_output: '0'
+    tape_displacement: L
+- params:
+    initial_state: q3
+    mem_cache_value: '1'
+    tape_input: '1'
+  output:
+    final_state: q3
+    mem_cache_value: '1'
+    tape_output: '1'
+    tape_displacement: L
+# q3 con '1' sobre el hueco: coloca 'i', vacía la caché y vuelve a q0.
+- params:
+    initial_state: q3
+    mem_cache_value: '1'
+    tape_input: '*'
+  output:
+    final_state: q0
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: R
+# q4: rebobina hacia la izquierda sobre los bits colocados hasta el blanco anterior a la cadena.
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'o'
+    tape_displacement: L
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q4
+    mem_cache_value:
+    tape_output: 'i'
+    tape_displacement: L
+- params:
+    initial_state: q4
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output:
+    tape_displacement: R
+# q5: restaura cada marca a su bit de izquierda a derecha; en el blanco final se detiene.
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input: 'o'
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output: '0'
+    tape_displacement: R
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input: 'i'
+  output:
+    final_state: q5
+    mem_cache_value:
+    tape_output: '1'
+    tape_displacement: R
+- params:
+    initial_state: q5
+    mem_cache_value:
+    tape_input:
+  output:
+    final_state: q6
+    mem_cache_value:
+    tape_output:
+    tape_displacement: S
+simulation_strings:
+# Demostración: cuatro transformaciones, todas con entradas de longitud >= 5.
+- '10110'
+- '11001'
+- '10000'
+- '11100'
