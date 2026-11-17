@@ -40,7 +40,6 @@ class Tape:
 
     def snapshot(self) -> Mapping[int, str]:
         """Copia de solo lectura de las celdas no blancas, independiente de esta cinta."""
-        # La copia desacopla la ID de la cinta de trabajo y el proxy impide modificarla.
         return MappingProxyType(dict(self._cells))
 
     def __repr__(self) -> str:

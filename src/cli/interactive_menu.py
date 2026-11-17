@@ -238,6 +238,7 @@ class Menu:
         self.say(textwrap.fill(text, WIDTH, initial_indent=lead, subsequent_indent=indent))
 
     def say(self, *lines: str) -> None:
+        """Escribe cada línea en ``self.out``; todo el texto del menú sale por este método."""
         for line in lines:
             print(line, file=self.out)
 

@@ -37,24 +37,25 @@ def simulate(machine: TuringMachine, word: str, max_steps: int = DEFAULT_MAX_STE
 
     # ID_0 = [q0, B] w: estado inicial, caché en blanco, cabezal en 0 y w escrita desde esa posición.
     current = Configuration(0, machine.initial_state, BLANK, 0, Tape.from_input(word).snapshot())
-    # Paso 9: el historial registra cada ID; son inmutables, así que ninguna cambia después.
+    # El historial empieza en ID_0; las IDs son inmutables, así que ninguna cambia después.
     history = [current]
-    # Paso 10: los estados de F son terminales y se comprueban antes de buscar otra regla.
+    # Paso 10, aceptación: los estados de F son terminales y se comprueban antes de buscar otra regla.
     while current.state not in machine.final_states:
         following = step(machine, current)
-        # El paso se calcula antes de revisar el límite: una MT sin regla se rechaza aunque
-        # haya agotado max_steps.
+        # Paso 10, rechazo. El paso se calcula antes de revisar el límite: una MT sin regla se
+        # rechaza aunque haya agotado max_steps.
         if following is None:
             reason = (
                 f"no hay regla para el estado {current.state!r} con caché {_show(current.cache)} "
                 f"leyendo {_show(current.scanned)}, y {current.state!r} no es final"
             )
             return SimulationResult(word, Outcome.REJECTED, history, reason)
-        # Aún había una regla aplicable: la ID calculada se descarta y la traza termina con
-        # exactamente max_steps transiciones, sin veredicto de aceptación ni de rechazo.
+        # Paso 10, límite. Aún había una regla aplicable: la ID calculada se descarta sin pasar por el
+        # paso 9 y la traza termina con exactamente max_steps transiciones, sin aceptar ni rechazar.
         if current.step_index >= max_steps:
             reason = f"se aplicaron {max_steps} transiciones y la máquina aún no se detiene"
             return SimulationResult(word, Outcome.LIMIT_EXCEEDED, history, reason)
+        # Paso 9: la nueva ID se agrega al historial sin reemplazar las anteriores.
         history.append(following)
         current = following
     return SimulationResult(word, Outcome.ACCEPTED, history, f"alcanzó el estado final {current.state!r}")

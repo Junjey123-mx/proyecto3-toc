@@ -80,18 +80,21 @@ def _input_string(value: Any, where: str) -> str:
 
 
 def _require(mapping: Mapping[str, Any], key: str, where: str) -> Any:
+    """Devuelve ``mapping[key]``; si falta la clave obligatoria, lanza ``MachineParseError`` con la ruta ``where``."""
     if key not in mapping:
         raise MachineParseError(f"{where}: falta la clave obligatoria '{key}'")
     return mapping[key]
 
 
 def _mapping(value: Any, where: str) -> Mapping[str, Any]:
+    """Devuelve ``value`` si es un mapeo; si no, lanza ``MachineParseError`` con la ruta ``where``."""
     if not isinstance(value, Mapping):
         raise MachineParseError(f"{where}: se esperaba un mapeo, no {value!r}")
     return value
 
 
 def _list(value: Any, where: str) -> list[Any]:
+    """Devuelve ``value`` si es una lista; si no, lanza ``MachineParseError`` con la ruta ``where``."""
     if not isinstance(value, list):
         raise MachineParseError(f"{where}: se esperaba una lista, no {value!r}")
     return value
