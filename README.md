@@ -14,7 +14,7 @@ El proyecto incluye cuatro máquinas definidas solo en YAML y ejecutadas por el 
 
 ## Video explicativo
 
-**Estado:** pendiente de grabación y publicación. El enlace no listado de YouTube se agregará en esta sección cuando el video exista. El guion, los comandos y la evidencia de la demostración están en [§21](#21-demostración-y-guion-del-video).
+**Enlace:** [Proyecto No. 3 — Simulador de Máquinas de Turing en Python](https://youtu.be/8hZA4eGbEQ4) (YouTube). El guion, los comandos y la evidencia de la demostración están en [§21](#21-demostración-y-guion-del-video).
 
 ---
 
@@ -91,14 +91,14 @@ Ninguna parte del código de Python conoce las máquinas: las cuatro se definen 
 | MT reconocedora: 2 aceptadas y 2 rechazadas de longitud ≥ 5 | L = {aⁿbⁿ \| n ≥ 1}: `aaabbb`, `aaaabbbb` aceptadas; `aaabb`, `aabbbb` rechazadas | [§10](#10-máquina-reconocedora) |
 | MT alteradora: 4 cadenas de longitud ≥ 5, sin dejar todo en blanco | Principal, suma binaria: `1011#0110`, `1111#0001`, `10101#10111`, `10000#00001`. Complementarias: incremento binario e inversión, con cuatro cadenas cada una | [§13](#13-máquina-alteradora-suma-binaria), [§11](#11-máquina-alteradora-incremento-binario), [§12](#12-máquina-alteradora-inversión-de-cadenas) |
 | Proporcionar las funciones de transición | Tablas δ en este README, en la cabecera de la salida del programa y en la ficha del menú | [§10.4](#104-tabla-de-transiciones), [§11.5](#115-tabla-de-transiciones), [§12.5](#125-tabla-de-transiciones), [§13.5](#135-tabla-de-transiciones) |
-| Video no listado con las ejecuciones y la arquitectura | Pendiente; guion preparado | [§21](#21-demostración-y-guion-del-video) |
+| Video no listado con las ejecuciones y la arquitectura | [Video en YouTube](https://youtu.be/8hZA4eGbEQ4), con el guion de [§21](#21-demostración-y-guion-del-video) | [Video explicativo](#video-explicativo) |
 | Repositorio privado y README en la raíz | Repositorio privado en GitHub; este archivo | — |
 
 **Decisiones propias (no exigidas por el enunciado).** El resultado `LIMIT_EXCEEDED` y la opción `--max-steps`, los estados finales terminales, la exigencia de símbolos de un solo carácter, el rechazo de claves YAML repetidas, la notación exacta de la cinta y del blanco, las dos alteradoras adicionales y el menú `--interactive` ([§15](#15-menú-interactivo)). Se explican en [§7.4](#74-decisiones-adoptadas), [§8](#8-motor-de-simulación-y-condiciones-de-parada) y [§16](#16-decisiones-de-implementación-en-python).
 
 ### 1.2 Rúbrica oficial
 
-La rúbrica oficial asigna 15 puntos. La tabla indica qué evidencia aporta el repositorio para cada rubro. No es una nota prevista: la dificultad no tiene una escala definida en el enunciado y el video todavía no existe.
+La rúbrica oficial asigna 15 puntos. La tabla indica qué evidencia aporta el repositorio para cada rubro. No es una nota prevista: la dificultad no tiene una escala definida en el enunciado.
 
 | Rubro | Puntos | Evidencia en el repositorio |
 |---|---:|---|
@@ -1615,6 +1615,8 @@ done
 ```
 
 ## 21. Demostración y guion del video
+
+El video está publicado en YouTube: <https://youtu.be/8hZA4eGbEQ4>.
 
 La demostración principal se hace en una sola sesión de `python main.py --interactive`, con la reconocedora aⁿbⁿ y la suma binaria. Las otras dos alteradoras son evidencia complementaria si el tiempo lo permite; no deben desplazar las ocho ejecuciones obligatorias.
 
