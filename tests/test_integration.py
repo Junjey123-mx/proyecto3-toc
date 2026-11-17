@@ -347,7 +347,7 @@ def test_demonstration_evidence_matches_the_current_output(name):
 # --- Menú interactivo con la secuencia del video ---------------------------------------------
 
 def test_video_key_sequence_of_the_readme_runs_the_eight_demonstrations(tmp_path):
-    """La secuencia de teclas de README.md, §25.2, produce las ocho ejecuciones obligatorias y una cadena nueva.
+    """La secuencia de teclas de README.md, §21, produce las ocho ejecuciones obligatorias y una cadena nueva.
 
     En la secuencia, ``⏎`` es la línea vacía (ENTER) que contesta la pausa al final de cada ejecución.
     """
@@ -413,6 +413,53 @@ def test_sections_cited_from_code_and_machines_exist_in_the_readme():
         source = path.read_text(encoding="utf-8")
         cited |= set(re.findall(r"README\.md\W{0,4}(?:\(sección |, §| §)(\d+(?:\.\d+)?)", source))
     assert cited and cited <= numbers
+
+
+def test_machine_files_cite_the_readme_section_that_describes_them():
+    text = README.read_text(encoding="utf-8")
+    machines = sorted(ROOT.glob("machines/*.yaml"))
+    assert len(machines) == 4
+    for path in machines:
+        number = re.search(r"README\.md \(sección (\d+)\)", path.read_text(encoding="utf-8")).group(1)
+        section = re.search(rf"(?ms)^## {number}\. .*?(?=^## )", text).group(0)
+        assert f"**Archivo:** `machines/{path.name}`" in section
+    fixture = ROOT / "tests" / "fixtures" / "statement_example_mt_1.yaml"
+    assert "README.md §7.6" in fixture.read_text(encoding="utf-8")
+    assert "`tests/fixtures/statement_example_mt_1.yaml`" in re.search(r"(?ms)^### 7\.6 .*?(?=^##)", text).group(0)
+
+
+def test_readme_index_lists_every_numbered_section_in_order():
+    text = README.read_text(encoding="utf-8")
+    sections = re.findall(r"^## (\d+\. .+)$", text, flags=re.MULTILINE)
+    index = text.split("\n## Índice\n", 1)[1].split("\n---\n", 1)[0]
+    entries = re.findall(r"^(\d+)\. \[(.+)\]\(#([^)]+)\)$", index, flags=re.MULTILINE)
+    assert [f"{number}. {title}" for number, title, _ in entries] == sections
+    assert [anchor for *_, anchor in entries] == [slug(section) for section in sections]
+    assert [int(section.split(".")[0]) for section in sections] == list(range(1, len(sections) + 1))
+
+
+def test_readme_section_references_name_existing_sections():
+    """Cada «§N», «§N.M» o «§N.M.K» propia del README existe, y un enlace ``[§N](#ancla)`` apunta al encabezado con ese número."""
+    text = README.read_text(encoding="utf-8")
+    numbered = {re.match(r"\d+(?:\.\d+)?", heading).group(0): slug(heading)
+                for heading in re.findall(r"^#{2,3} (\d.+)$", text, flags=re.MULTILINE)}
+    external = {"8.3.1"}  # sección de Hopcroft et al. (2001), no de este README
+    references = set(re.findall(r"§(\d+(?:\.\d+)*)", text)) - external
+    assert references and references <= set(numbered)
+    links = re.findall(r"\[§(\d+(?:\.\d+)?)\]\(#([^)]+)\)", text)
+    assert links and all(numbered[number] == anchor for number, anchor in links)
+
+
+def test_readme_file_links_are_relative_and_exist():
+    """No hay rutas absolutas, y cada enlace a un archivo es relativo y existe.
+
+    Hoy el README no enlaza archivos; la primera aserción protege los que se agreguen, como las capturas
+    de ``docs/images/``.
+    """
+    text = README.read_text(encoding="utf-8")
+    targets = re.findall(r"\]\((?!#|https?://)([^)\s]+)\)", text)
+    assert all(not target.startswith(("/", "~")) and (ROOT / target).exists() for target in targets)
+    assert not re.search(r"/home/|/Users/|\b[A-Z]:\\", text)
 
 
 def test_readme_test_counts_match_the_collected_suite():
