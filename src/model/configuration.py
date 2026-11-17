@@ -28,6 +28,7 @@ class Configuration:
     def __post_init__(self) -> None:
         if self.step_index < 0:
             raise ValueError(f"step_index debe ser >= 0, no {self.step_index}")
+        # Copia propia de la cinta: una ID registrada no comparte un diccionario mutable con ninguna otra.
         cells = {index: symbol for index, symbol in self.tape.items() if symbol is not BLANK}
         object.__setattr__(self, "tape", MappingProxyType(cells))
 

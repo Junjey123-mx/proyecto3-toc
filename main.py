@@ -82,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run(path: str, max_steps: int, out: TextIO, err: TextIO) -> int:
     """Carga ``path``, simula sus cadenas y escribe los reportes; devuelve el código de salida."""
+    # Un archivo o una máquina inválidos se informan antes de simular; no son rechazos.
     try:
         machine, strings = parse_machine(load_yaml(path))
         validate_machine(machine, strings)
@@ -89,6 +90,7 @@ def run(path: str, max_steps: int, out: TextIO, err: TextIO) -> int:
         print(f"error: {error}", file=err)
         return EXIT_INPUT_ERROR
 
+    # El glifo del blanco se elige una vez por máquina, para que todas las IDs lo escriban igual.
     blank = blank_glyph(machine)
     print(f"Máquina: {path}", file=out)
     for line in describe_machine(machine, blank):
@@ -98,6 +100,7 @@ def run(path: str, max_steps: int, out: TextIO, err: TextIO) -> int:
         print("El archivo no contiene cadenas en simulation_strings.", file=out)
         return EXIT_OK
 
+    # Cada cadena se simula desde su propia ID_0; las trazas se guardan solo para el resumen.
     traces = []
     for number, word in enumerate(strings, start=1):
         trace = build_trace(simulate(machine, word, max_steps))

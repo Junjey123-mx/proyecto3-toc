@@ -39,6 +39,7 @@ class Transition:
     move: Move
 
     def __post_init__(self) -> None:
+        # El parser ya convierte L/R/S en Move; esta comprobación protege las reglas creadas desde Python.
         if not isinstance(self.move, Move):
             raise TypeError(f"move debe ser Move.L, Move.R o Move.S, no {self.move!r}")
 

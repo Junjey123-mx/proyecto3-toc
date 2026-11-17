@@ -20,8 +20,10 @@ def blank_glyph(machine: TuringMachine) -> str:
     para que el blanco nunca se confunda con un símbolo de la cinta o de la caché.
     """
     used = set(machine.tape_alphabet)
+    # La caché se escribe dentro de [q, c] con el mismo glifo, así que sus valores también cuentan.
     for rule in machine.transitions:
         used.update((rule.cache, rule.next_cache))
+    # La búsqueda siempre termina: la máquina usa una cantidad finita de símbolos.
     candidates = chain([DEFAULT_BLANK_GLYPH], map(chr, count(ord(FALLBACK_BLANK_GLYPH))))
     return next(glyph for glyph in candidates if glyph not in used)
 

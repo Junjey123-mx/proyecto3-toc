@@ -24,6 +24,7 @@ def format_id(entry: TraceEntry, input_length: int, blank: str = DEFAULT_BLANK_G
     control = format_control(entry.state, entry.cache, blank)
     cells = []
     for position in range(left, right + 1):
+        # La tupla [q, c] va justo antes de la celda bajo el cabezal: X1…Xi-1 [q, c] Xi…Xn.
         if position == entry.head:
             cells.append(control)
         cells.append(show_symbol(entry.tape.get(position), blank))
@@ -39,6 +40,7 @@ def format_id_lines(trace: Trace, blank: str = DEFAULT_BLANK_GLYPH) -> list[str]
     length = len(trace.word)
     ids = [format_id(entry, length, blank) for entry in trace.entries]
     rules = [NO_RULE if entry.applied is None else format_rule(entry.applied, blank) for entry in trace.entries]
+    # Los anchos salen de todas las filas: la tabla se alinea sin recortar ninguna ID.
     step_width = max(len("Paso"), len(str(trace.steps)))
     id_width = max(len("ID"), *(len(text) for text in ids))
     lines = [f"{'Paso':>{step_width}}  {'ID':<{id_width}}  Transición aplicada"]

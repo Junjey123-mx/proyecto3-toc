@@ -43,6 +43,7 @@ class CatalogEntry:
 
     @property
     def path(self) -> Path:
+        """Ruta absoluta del YAML dentro de ``machines/``."""
         return MACHINES_DIR / self.file
 
     def admits(self, word: str) -> bool:
@@ -50,6 +51,7 @@ class CatalogEntry:
         return re.fullmatch(self.domain, word) is not None
 
 
+# El orden de esta tupla es el orden de las opciones del menú principal.
 CATALOG: tuple[CatalogEntry, ...] = (
     CatalogEntry(
         file="recognizer_anbn.yaml",

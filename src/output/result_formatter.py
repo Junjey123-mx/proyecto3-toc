@@ -50,6 +50,7 @@ def format_result(
     muestra siempre completa.
     """
     position = f"Cadena {number} de {total}: " if number is not None and total is not None else "Cadena: "
+    # El menú reutiliza format_final_configuration y format_procedure en otro orden (simulation_view).
     return [
         f"=== {position}{show_word(trace.word)} (longitud {len(trace.word)}) ===",
         f"Resultado:     {format_outcome(trace.outcome)}",

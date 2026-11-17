@@ -31,12 +31,14 @@ LIMIT_NOTE = [
 
 
 def heading(title: str, rule: str) -> list[str]:
+    """Título centrado en ``WIDTH`` columnas entre dos separadores ``rule``."""
     return [rule, title.center(WIDTH).rstrip(), rule]
 
 
 def format_verdict(trace: Trace, recognizer: bool, blank: str) -> list[str]:
     """Veredicto del motor: titular, cadena (y cinta resultante si transformó), pasos y motivo real."""
     outcome = trace.outcome
+    # Solo una alteradora que se detuvo en F tiene una cinta resultante que informar.
     if outcome is Outcome.ACCEPTED and not recognizer:
         result = tape_contents(trace.final.tape, blank)
         facts = [
@@ -45,6 +47,7 @@ def format_verdict(trace: Trace, recognizer: bool, blank: str) -> list[str]:
         ]
     else:
         facts = [f"Cadena evaluada:  {show_word(trace.word)}"]
+    # El motivo es el texto exacto del motor; aquí solo se le da forma de oración.
     reason = [f"{trace.reason[0].upper()}{trace.reason[1:]}."]
     if outcome is Outcome.LIMIT_EXCEEDED:
         reason += LIMIT_NOTE
@@ -63,6 +66,7 @@ def format_verdict(trace: Trace, recognizer: bool, blank: str) -> list[str]:
 
 def format_simulation(trace: Trace, machine: str, recognizer: bool, blank: str) -> list[str]:
     """Ejecución completa, en orden: inicio, todas las IDs, configuración final, veredicto y fin."""
+    # El veredicto se imprime al final para que se lea como la conclusión del procedimiento.
     return [
         *heading("INICIO DE SIMULACIÓN", MAJOR),
         "",

@@ -62,6 +62,7 @@ class Menu:
 
     def run(self) -> int:
         """Muestra el menú principal hasta «Salir», el fin de la entrada o Ctrl+C."""
+        # EOF y Ctrl+C cierran el menú sin traceback; solo Ctrl+C cambia el código de salida.
         try:
             self.main_menu()
         except EOFError:
@@ -74,10 +75,12 @@ class Menu:
     # Navegación
 
     def main_menu(self) -> None:
+        """Menú principal: las máquinas del catálogo, en su orden, y «Salir»."""
         while True:
             self.banner("SIMULADOR DE MÁQUINAS DE TURING")
             labels = [entry.menu_label for entry in CATALOG]
             choice = self.choose([*labels, "Salir"], "Seleccione una opción: ")
+            # «Salir» es la opción len(CATALOG) + 1.
             if choice > len(CATALOG):
                 self.say("", "Hasta luego.")
                 return
@@ -86,6 +89,7 @@ class Menu:
                 self.machine_menu(session)
 
     def machine_menu(self, session: Session) -> None:
+        """Submenú de una máquina: cadenas disponibles, cadena nueva o regreso al menú principal."""
         options = ["Cadenas disponibles", "Ingresar una cadena nueva", "Regresar al menú principal"]
         while True:
             self.banner("MÁQUINA SELECCIONADA")
@@ -99,6 +103,7 @@ class Menu:
                 return
 
     def strings_menu(self, session: Session) -> None:
+        """Lista las cadenas de la sesión con su origen y ejecuta la elegida, hasta «Regresar»."""
         while True:
             self.say("", f"CADENAS DISPONIBLES — {session.entry.title}")
             width = max(len(show_word(word)) for word, _ in session.strings) if session.strings else 0
@@ -109,6 +114,7 @@ class Menu:
             self.execute(session, session.strings[choice - 1][0])
 
     def new_string(self, session: Session) -> None:
+        """Pide una cadena, la valida, la agrega a la sesión si no estaba y la ejecuta."""
         entry, machine = session.entry, session.machine
         self.say(
             "",
@@ -120,6 +126,7 @@ class Menu:
         )
         if entry.admits(""):
             self.say("Deje la línea vacía para ingresar la cadena vacía (ε).")
+        # Una cadena inválida nunca llega al motor: se explica el problema y se ofrece reintentar.
         while True:
             word = self.read("Ingrese una cadena: ").strip()
             problem = self.problem(session, word)
@@ -140,6 +147,7 @@ class Menu:
 
     def open(self, entry: CatalogEntry) -> Session | None:
         """Carga la máquina la primera vez (la sesión se conserva) y muestra su ficha sin simular nada."""
+        # La sesión se crea una vez por archivo, así que las cadenas agregadas se conservan al volver.
         session = self.sessions.get(entry.file)
         if session is None:
             try:
@@ -169,6 +177,7 @@ class Menu:
 
     def execute(self, session: Session, word: str) -> None:
         """Simula solo ``word`` con el motor, muestra la ejecución completa y espera ENTER para volver."""
+        # El menú no simula por su cuenta: usa el mismo motor y la misma traza que --machine.
         trace = build_trace(simulate(session.machine, word, self.max_steps))
         label = f"{session.entry.menu_label} ({session.entry.file})"
         self.say("", *format_simulation(trace, label, session.entry.recognizer, session.blank), "")
@@ -220,9 +229,11 @@ class Menu:
                 self.say(f"No escribió ninguna opción. Escriba un número del 1 al {len(options)}.")
 
     def banner(self, title: str) -> None:
+        """Título centrado entre dos líneas de ``RULE``."""
         self.say("", RULE, title.center(len(RULE)).rstrip(), RULE)
 
     def paragraph(self, lead: str, text: str) -> None:
+        """``text`` ajustado a ``WIDTH`` columnas; las líneas siguientes se sangran bajo ``lead``."""
         indent = " " * (len(lead) - len(lead.lstrip()) + 3)
         self.say(textwrap.fill(text, WIDTH, initial_indent=lead, subsequent_indent=indent))
 

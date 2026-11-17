@@ -14,6 +14,7 @@ from src.utils.notation import DEFAULT_BLANK_GLYPH, format_rule, show_symbol
 
 def format_symbols(values: Iterable[Symbol], blank: str = DEFAULT_BLANK_GLYPH) -> str:
     """Conjunto ordenado entre llaves, con el blanco al final: ``{0, 1, B}``."""
+    # None no se compara con cadenas; la clave envía el blanco al final y ordena el resto.
     ordered = sorted(set(values), key=lambda s: (s is BLANK, s or ""))
     return "{" + ", ".join(show_symbol(s, blank) for s in ordered) + "}"
 
@@ -33,6 +34,7 @@ def formal_components(machine: TuringMachine, blank: str = DEFAULT_BLANK_GLYPH) 
 def describe_machine(machine: TuringMachine, blank: str = DEFAULT_BLANK_GLYPH) -> list[str]:
     """Resumen formal M = (Q, Σ, Γ, δ, q0, B, F) con la tabla δ completa, en el orden del YAML."""
     width = len(str(len(machine.transitions)))
+    # Se numera desde 1 en el orden del YAML: la regla n es delta[n - 1] en los mensajes de validación.
     return [
         *formal_components(machine, blank),
         f"δ  = {len(machine.transitions)} reglas" + (", en el orden del YAML:" if machine.transitions else ""),

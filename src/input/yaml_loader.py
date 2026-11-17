@@ -20,8 +20,10 @@ class _UniqueKeySafeLoader(yaml.SafeLoader):
     """
 
     def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> dict[Any, Any]:
+        """Construye el mapeo como ``SafeLoader``, pero antes rechaza las claves repetidas."""
         seen: set[Hashable] = set()
         for key_node, _ in node.value:
+            # La clave de fusión ``<<`` no es un dato: SafeLoader la resuelve al combinar los mapeos.
             if key_node.tag == _MERGE_TAG:
                 continue
             key = self.construct_object(key_node, deep=deep)
@@ -46,6 +48,7 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
     ``parse_machine``.
     """
     source = Path(path)
+    # utf-8-sig acepta también archivos guardados con BOM; con utf-8 el texto empezaría con U+FEFF.
     try:
         text = source.read_text(encoding="utf-8-sig")
     except OSError as error:

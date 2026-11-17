@@ -31,15 +31,18 @@ class TuringMachine:
     )
 
     def __post_init__(self) -> None:
+        # La dataclass es frozen: object.__setattr__ es la única forma de normalizar los campos al crearla.
         for name in ("states", "input_alphabet", "tape_alphabet"):
             object.__setattr__(self, name, frozenset(getattr(self, name)))
         final = self.final_states
         object.__setattr__(self, "final_states", frozenset([final] if isinstance(final, str) else final))
         object.__setattr__(self, "transitions", tuple(self.transitions))
 
+        # δ se indexa una sola vez: cada paso de la simulación la consulta en O(1) esperado.
         index: dict[tuple[str, Symbol, Symbol], Transition] = {}
         for position, rule in enumerate(self.transitions):
             first = index.get(rule.key)
+            # Una segunda regla con la misma clave haría que δ no fuera una función (no determinismo).
             if first is not None:
                 kind = "duplicadas" if first == rule else "en conflicto"
                 raise ValueError(

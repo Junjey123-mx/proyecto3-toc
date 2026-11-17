@@ -16,6 +16,7 @@ class Tape:
     """
 
     def __init__(self, cells: Mapping[int, Symbol] | None = None) -> None:
+        # Las celdas recibidas se copian sin los blancos: una posición ausente ya equivale a B.
         self._cells: dict[int, str] = {
             index: symbol for index, symbol in (cells or {}).items() if symbol is not BLANK
         }
@@ -31,6 +32,7 @@ class Tape:
 
     def write(self, index: int, symbol: Symbol) -> None:
         """Escribe ``symbol`` en ``index``; escribir el blanco borra la celda."""
+        # Borrar en lugar de guardar None deja una sola representación del blanco.
         if symbol is BLANK:
             self._cells.pop(index, None)
         else:
@@ -38,6 +40,7 @@ class Tape:
 
     def snapshot(self) -> Mapping[int, str]:
         """Copia de solo lectura de las celdas no blancas, independiente de esta cinta."""
+        # La copia desacopla la ID de la cinta de trabajo y el proxy impide modificarla.
         return MappingProxyType(dict(self._cells))
 
     def __repr__(self) -> str:

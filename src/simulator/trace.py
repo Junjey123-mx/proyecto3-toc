@@ -39,6 +39,7 @@ class TraceEntry:
     applied: Transition | None
 
     def __post_init__(self) -> None:
+        # Copia propia de la cinta: la traza no depende de los objetos que devolvió el motor.
         cells = {index: symbol for index, symbol in self.tape.items() if symbol is not BLANK}
         object.__setattr__(self, "tape", MappingProxyType(cells))
 
@@ -62,6 +63,7 @@ class TraceEntry:
         aunque esté en una posición negativa o después del último símbolo.
         """
         positions = [self.head, *self.tape]
+        # Con la entrada vacía no hay zona de entrada: el rango lo fijan el cabezal y las celdas escritas.
         if input_length > 0:
             positions += [0, input_length - 1]
         return min(positions), max(positions)
@@ -105,20 +107,24 @@ def build_trace(result: SimulationResult) -> Trace:
     first = entries[0]
     if first.step != 0 or first.applied is not None:
         raise TraceError("ID_0 debe tener paso 0 y ninguna regla aplicada")
+    # Cada par consecutivo se verifica con la regla registrada, sin volver a consultar la máquina.
     for previous, current in zip(entries, entries[1:]):
         _check_move(previous, current)
     return Trace(result.word, result.outcome, result.reason, entries)
 
 
 def _check_move(previous: TraceEntry, current: TraceEntry) -> None:
+    """Comprueba que ``current`` resulte de aplicar su regla a ``previous``; si no, lanza ``TraceError``."""
     where = f"ID_{previous.step} ⊢ ID_{current.step}"
     rule = current.applied
     if current.step != previous.step + 1:
         raise TraceError(f"{where}: los pasos deben ser consecutivos")
     if rule is None:
         raise TraceError(f"{where}: falta la regla aplicada")
+    # La regla debe tener como clave el estado, la caché y el símbolo leído de la ID anterior.
     if rule.key != (previous.state, previous.cache, previous.scanned):
         raise TraceError(f"{where}: la regla {rule.key!r} no corresponde a la ID anterior")
+    # La cinta esperada se recalcula con la convención de Tape.write: escribir el blanco borra la celda.
     expected_tape = dict(previous.tape)
     if rule.write is BLANK:
         expected_tape.pop(previous.head, None)

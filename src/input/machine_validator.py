@@ -14,6 +14,7 @@ def validate_machine(machine: TuringMachine, strings: list[str]) -> None:
     se admiten aunque nunca se ejecuten (D6).
     """
     states, sigma, gamma = machine.states, machine.input_alphabet, machine.tape_alphabet
+    # Los problemas se acumulan para informar todos en un solo error, cada uno con su campo YAML.
     errors: list[str] = []
 
     if not states:
@@ -30,9 +31,11 @@ def validate_machine(machine: TuringMachine, strings: list[str]) -> None:
         errors.append("alphabet: el blanco no puede ser un símbolo de entrada")
     if BLANK not in gamma:
         errors.append("tape_alphabet: debe incluir el blanco como entrada vacía ('-')")
+    # Σ ⊆ Γ; el blanco se excluye porque su presencia en Σ ya tiene su propio mensaje.
     missing = sorted(symbol for symbol in sigma - gamma if symbol is not BLANK)
     if missing:
         errors.append(f"tape_alphabet: debe incluir los símbolos de alphabet; faltan {missing}")
+    # La cinta se escribe sin separadores, así que cada símbolo debe ocupar un solo carácter.
     errors += [
         f"alphabet: {symbol!r} debe ser un único carácter porque las cadenas se leen carácter por carácter"
         for symbol in sorted(s for s in sigma if s is not BLANK and len(s) != 1)
@@ -42,6 +45,7 @@ def validate_machine(machine: TuringMachine, strings: list[str]) -> None:
         for symbol in sorted(s for s in gamma - sigma if s is not BLANK and len(s) != 1)
     ]
 
+    # Cada regla usa estados de Q y símbolos de Γ; los valores de caché quedan libres (D3).
     for index, rule in enumerate(machine.transitions):
         where = f"delta[{index}]"
         if rule.state not in states:
@@ -63,4 +67,5 @@ def validate_machine(machine: TuringMachine, strings: list[str]) -> None:
 
 
 def _show(symbol: Symbol) -> str:
+    """Símbolo para los mensajes de error: «el blanco» o el símbolo entre comillas."""
     return "el blanco" if symbol is BLANK else repr(symbol)

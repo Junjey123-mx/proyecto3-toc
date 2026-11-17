@@ -26,6 +26,7 @@ def tape_contents(tape: Mapping[int, str], blank: str = DEFAULT_BLANK_GLYPH) -> 
     """
     if not tape:
         return ""
+    # En la cinta dispersa, min y max son la primera y la última celda no blanca, aunque sean negativas.
     return "".join(show_symbol(tape.get(i), blank) for i in range(min(tape), max(tape) + 1))
 
 
@@ -48,6 +49,7 @@ def render_tape(
         raise ValueError(f"max_cells debe ser positivo, no {max_cells!r}")
     left, right = min(left, head), max(right, head)
     if max_cells is not None and right - left + 1 > max_cells:
+        # La ventana se centra en el cabezal sin salirse del rango [left, right].
         start = min(max(left, head - max_cells // 2), right - max_cells + 1)
         cut_left, cut_right = start > left, start + max_cells - 1 < right
         left, right = start, start + max_cells - 1

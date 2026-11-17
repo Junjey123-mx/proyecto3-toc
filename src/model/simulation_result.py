@@ -31,6 +31,7 @@ class SimulationResult:
     reason: str
 
     def __post_init__(self) -> None:
+        # La lista que arma el motor se convierte en tupla para que el historial no cambie después.
         object.__setattr__(self, "configurations", tuple(self.configurations))
         if not self.configurations:
             raise ValueError("un resultado debe contener al menos ID_0")
